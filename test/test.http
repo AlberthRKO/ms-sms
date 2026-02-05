@@ -1,0 +1,37 @@
+
+@ms_fortinet_host=http://172.27.39.12:3030
+@URL = {{ms_fortinet_host}}/v1
+
+GET {{ms_fortinet_host}}
+content-type: application/json
+
+### call post for test
+POST {{URL}}/some/success
+content-type: application/json
+
+{
+  "mode": "prod",
+  "application": "unia, mp",
+  "someData": "1234"
+}
+
+
+### call post when error
+POST {{URL}}/some/error
+content-type: application/json
+
+{
+  "mode": "prod",
+  "application": "unia, mp",
+  "someData": "1234"
+}
+
+### call post when error
+POST {{URL}}/some/error
+content-type: application/json
+
+{
+    "aplicacion": "mp",
+    "password": "Admin123",
+    "usuario": "10342024"
+}
