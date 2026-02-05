@@ -1,16 +1,20 @@
-import { Injectable } from '@nestjs/common';
-import { MsLogsService } from 'fiscalia_bo-nest-helpers/dist/modules/ms-logs';
-
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class GlobalService {
-  private readonly appTagName: string;
+  private readonly printLog: boolean;
 
-  constructor(
-    public readonly msLogsService: MsLogsService,
-    private readonly configService: ConfigService,
-  ) {
-    this.appTagName = this.configService.get('appTagName');
+  constructor(private readonly configService: ConfigService) {
+    this.printLog = this.configService.get<boolean>('showDebugServer');
+  }
+
+  printTerminalLog(message: string, serviceName = 'GlobalService', mode = 'log'): void {
+    if (this.printLog) {
+      if (mode === 'warn') Logger.warn(message, serviceName);
+      if (mode === 'error') Logger.error(message, serviceName);
+      if (mode === 'log') Logger.log(message, serviceName);
+      if (mode === 'debug') Logger.debug(message, serviceName);
+    }
   }
 }

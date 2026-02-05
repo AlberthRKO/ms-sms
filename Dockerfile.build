@@ -1,0 +1,12 @@
+FROM harbor.mp.gob.bo/registro/dockers/node:22.12-alpine AS development
+
+WORKDIR /usr/src/app
+ENV TZ=America/La_Paz
+
+COPY package.json ./
+COPY yarn.lock ./
+COPY . .
+
+RUN yarn install
+# RUN yarn prisma generate
+RUN yarn build

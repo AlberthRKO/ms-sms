@@ -1,15 +1,15 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { configSwagger, printServerInitLog } from 'fiscalia_bo-nest-helpers/dist/helpers';
+import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import { IPackageJson } from './config/configuration';
+import { configSwagger, printServerInitLog } from './helpers/swagger.helper';
+import * as multipart from '@fastify/multipart';
+import * as fastifyStatic from '@fastify/static';
 import { VersioningType } from '@nestjs/common';
-import fastifyStatic from '@fastify/static';
-import fastifyCors from '@fastify/cors';
-import { IPackageJson } from 'fiscalia_bo-nest-helpers/dist/dto';
-import { join } from 'path';
-import { GlobalExceptionFilter } from './common/interceptors/global-exception.filter';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseFormatInterceptor } from './common/interceptors/response-format.interceptor';
+import { join } from 'node:path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -17,34 +17,39 @@ async function bootstrap() {
     new FastifyAdapter({ bodyLimit: 1048576 * 100 }),
   );
 
-  const configService = app.get(ConfigService);
-  const packageJson = configService.get<IPackageJson>('packageJson');
-  const corsOptions = configService.get<string>('cors');
-
-  // middleware for static files
-  app.register(fastifyStatic, {
-    root: join(__dirname, '..', 'public'),
-    prefix: '/assets/',
+  // Registrar el plugin multipart
+  await app.register(multipart as any, {
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB
+      files: 1,
+    },
   });
 
-  app.register(fastifyCors, {
-    origin: corsOptions, // origin allowed: ValueOrArray<OriginType>
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS', ''], // methods allowed
-    // allowedHeaders: ['Content-Type', 'Authorization'], // headers allowed
+  // Servir archivos estáticos desde la carpeta public
+  await app.register(fastifyStatic as any, {
+    root: join(process.cwd(), 'public'),
+    prefix: '/public/',
   });
 
+  app.enableShutdownHooks();
   app.enableVersioning({ type: VersioningType.URI });
 
-  if (configService.get('showSwagger') === 'true')
+  const configService = app.get(ConfigService);
+  const packageJson = configService.get<IPackageJson>('packageJson');
+
+  if (configService.get<boolean>('showSwagger'))
     configSwagger(app, packageJson, { jsonDocumentUrl: '/api/swagger.yml' });
 
-  app.useGlobalInterceptors(new ResponseFormatInterceptor());
-  app.useGlobalFilters(new GlobalExceptionFilter());
-  const port = configService.get<number>('port') || 3020;
-  const host = configService.get('host') || '0.0.0.0';
+  // Interceptors globales
+  app.useGlobalInterceptors(new ResponseFormatInterceptor(app.get(Reflector)));
 
+  // Filters globales
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
+  const port = configService.get<number>('port') || 3515;
+  const host = configService.get('host');
   await app.listen(port, host).then(async () => {
     printServerInitLog(app, packageJson);
   });
 }
-bootstrap();
+void bootstrap();

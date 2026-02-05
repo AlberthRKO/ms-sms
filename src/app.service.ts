@@ -1,8 +1,8 @@
 import { ConfigService } from '@nestjs/config';
 import { Injectable } from '@nestjs/common';
-import { DateTime } from 'luxon';
-import { ResponseDTO, dataResponseSuccess } from 'fiscalia_bo-nest-helpers/dist/dto/response.dto';
-import { IPackageJson } from 'fiscalia_bo-nest-helpers/dist/dto';
+import dayjs from 'dayjs';
+
+import { ResponseDTO } from 'fiscalia_bo-nest-helpers/dist/dto/response.dto';
 
 @Injectable()
 export class AppService {
@@ -14,19 +14,23 @@ export class AppService {
    */
   getPing(): ResponseDTO<{
     author: string;
-    dateTimeServer: Date;
+    dateTimeServer: string;
     nameApp: string;
     version: string;
   }> {
-    const packageJson = this.configService.get<IPackageJson>('packageJson');
-
-    return dataResponseSuccess({
-      data: {
-        author: packageJson.author,
-        dateTimeServer: DateTime.now().toJSDate(),
-        nameApp: packageJson?.name,
-        version: packageJson?.version,
+    const packageJson = this.configService.get<any>('packageJson');
+    return {
+      error: false,
+      message: packageJson?.description,
+      response: {
+        data: {
+          author: packageJson.author,
+          dateTimeServer: dayjs().toISOString(),
+          nameApp: packageJson?.name,
+          version: packageJson?.version,
+        },
       },
-    });
+      status: 200,
+    };
   }
 }

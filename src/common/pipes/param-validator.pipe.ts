@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
 import { paramTypeValidator } from 'fiscalia_bo-nest-helpers/dist/custom-validators/validator.functions';
+
+type ClassConstructor = new (...args: any[]) => any;
 
 /**
  * Pipe for validate data input in body into mutation or query
@@ -18,11 +19,12 @@ export class ParamValidatorPipe implements PipeTransform<any> {
     if (value === undefined || value === null) {
       return value;
     }
+
     return paramTypeValidator(value, metatype);
   }
 
-  private toValidate(metatype: Function): boolean {
-    const types: Function[] = [String, Boolean, Number, Array, Object];
+  private toValidate(metatype: ClassConstructor): boolean {
+    const types: ClassConstructor[] = [String, Boolean, Number, Array, Object];
     return !types.includes(metatype);
   }
 }

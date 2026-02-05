@@ -1,4 +1,3 @@
-// import { PrismaService } from './prisma.service';
 import { Global, Module } from '@nestjs/common';
 import { GlobalService } from './global.service';
 

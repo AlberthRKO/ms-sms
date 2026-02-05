@@ -1,0 +1,76 @@
+{
+  "$schema": "https://unpkg.com/release-it@18/schema/release-it.json",
+  "git": {
+    "commitMessage": "chore(update): actualizacion a la versión v${version}",
+    "tagName": "v${version}",
+    "requireCleanWorkingDir": false
+  },
+  "gitlab": {
+    "release": true,
+    "releaseName": "v${version}",
+    "assets": {
+      "glob": []
+    }
+  },
+  "npm": {
+    "publish": false
+  },
+  "hooks": {
+    "after:bump": "npm run build",
+    "after:release": "echo Lanzamiento existosamente de ${name} a la v${version} en ${repo.repository}."
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "infile": "./CHANGELOG.md",
+      "header": "# CAMBIOS Y ACTUALIZACIONES",
+      "writerOpts": {
+        "groupBy": "type"
+      },
+      "preset": {
+        "name": "conventionalcommits",
+        "types": [
+          {
+            "type": "feat",
+            "section": "🚀 Features"
+          },
+          {
+            "type": "fix",
+            "section": "🐞 Bug Fixes"
+          },
+          {
+            "type": "perf",
+            "section": "⚡ Performance Improvements"
+          },
+          {
+            "type": "refactor",
+            "section": "♻️ Code Refactoring"
+          },
+          {
+            "type": "test",
+            "section": "🧪 Tests"
+          },
+          {
+            "type": "build",
+            "section": "🏗️ Build System"
+          },
+          {
+            "type": "ci",
+            "section": "🔧 CI/CD"
+          },
+          {
+            "type": "docs",
+            "section": "📚 Documentation"
+          },
+          {
+            "type": "style",
+            "section": "💄 Code Style"
+          },
+          {
+            "type": "chore",
+            "section": "📦 Maintenance"
+          }
+        ]
+      }
+    }
+  }
+}

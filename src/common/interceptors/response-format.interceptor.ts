@@ -1,13 +1,26 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
-import { map, Observable } from 'rxjs';
+import { SKIP_RESPONSE_FORMAT } from '../decorators/interceptor.decorator';
+import { Reflector } from '@nestjs/core';
 import { FastifyReply } from 'fastify';
+import { map, Observable } from 'rxjs';
 
 @Injectable()
 export class ResponseFormatInterceptor implements NestInterceptor {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const skipFormat = this.reflector.get<boolean>(SKIP_RESPONSE_FORMAT, context.getHandler());
+
+    if (skipFormat) {
+      return next.handle();
+    }
+
+    const httpContext = context.switchToHttp();
+    const response = httpContext.getResponse<FastifyReply>();
+
     return next.handle().pipe(
-      map((data) => {
-        const respBackend: FastifyReply = context.switchToHttp().getResponse();
+      map((data: { error: boolean; status?: number; message?: string; response?: any }) => {
+        // Tu lógica de formateo existente
         if (typeof data?.error !== 'boolean') {
           const auxData = {
             error: false,
@@ -17,16 +30,16 @@ export class ResponseFormatInterceptor implements NestInterceptor {
             },
             status: 200,
           };
-          respBackend.code(auxData.status);
+          response.status(auxData.status);
           return auxData;
         } else {
-          if (typeof data.status == 'number' && data.status > 200) respBackend.code(data.status);
+          if (typeof data.status == 'number' && data.status > 200) response.status(data.status);
           else if (!data.error) {
             data.status = 200;
-            respBackend.code(200);
+            response.status(200);
           } else {
             data.status = 422;
-            respBackend.code(422);
+            response.status(422);
           }
           return data;
         }
