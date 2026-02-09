@@ -1,0 +1,160 @@
+### ======================================
+### MICROSERVICIO SMS - EJEMPLOS DE USO
+### ======================================
+
+@base_url = http://localhost:3515/v1/sms
+
+### ======================================
+### 1. ENVIAR SMS CON CÓDIGO (Tipo 1)
+### ======================================
+POST {{base_url}}/send-message
+Content-Type: application/json
+
+{
+  "mode": "prod",
+  "phone": "+59178945612",
+  "message": "Tu código de verificación es: 123456. Válido por 5 minutos.",
+  "app": "UNIA",
+  "messageType": 1,
+  "user": {
+    "ci": "12345678",
+    "nombreCompleto": "Juan Perez Lopez",
+    "msPersonaId": 123,
+    "funcionarioId": 456,
+    "institucionId": 789,
+    "oficinaId": 101
+  }
+}
+
+### ======================================
+### 2. ENVIAR MENSAJE INFORMATIVO (Tipo 2)
+### ======================================
+POST {{base_url}}/send-message
+Content-Type: application/json
+
+{
+  "mode": "prod",
+  "phone": "+59176543210",
+  "message": "Su audiencia ha sido programada para el 15/03/2026 a las 10:00 AM en el Juzgado 2do de Instrucción.",
+  "app": "Sistema Judicial",
+  "messageType": 2,
+  "user": {
+    "ci": "87654321",
+    "nombreCompleto": "Maria Rodriguez",
+    "msPersonaId": 789,
+    "funcionarioId": 321
+  }
+}
+
+### ======================================
+### 3. ACTUALIZAR ESTADO A ENVIADO
+### ======================================
+POST {{base_url}}/send-message/status
+Content-Type: application/json
+
+{
+  "messageId": "67a42c2a88453f4c8d5b9d0e",
+  "status": 1
+}
+
+### ======================================
+### 4. ACTUALIZAR ESTADO A FALLIDO
+### ======================================
+POST {{base_url}}/send-message/status
+Content-Type: application/json
+
+{
+  "messageId": "67a42c2a88453f4c8d5b9d0e",
+  "status": 2
+}
+
+### ======================================
+### 5. LISTAR TODOS LOS MENSAJES
+### ======================================
+GET {{base_url}}/messages
+
+### ======================================
+### 6. LISTAR MENSAJES CON CÓDIGO (Tipo 1)
+### ======================================
+GET {{base_url}}/messages?messageType=1
+
+### ======================================
+### 7. LISTAR MENSAJES ENVIADOS
+### ======================================
+GET {{base_url}}/messages?status=1
+
+### ======================================
+### 8. LISTAR MENSAJES PENDIENTES
+### ======================================
+GET {{base_url}}/messages?status=0
+
+### ======================================
+### 9. LISTAR MENSAJES FALLIDOS
+### ======================================
+GET {{base_url}}/messages?status=2
+
+### ======================================
+### 10. FILTRO COMBINADO: Códigos Enviados
+### ======================================
+GET {{base_url}}/messages?messageType=1&status=1
+
+### ======================================
+### 11. BUSCAR POR TELÉFONO
+### ======================================
+GET {{base_url}}/messages?phone=59178945612
+
+### ======================================
+### 12. BUSCAR POR APLICACIÓN
+### ======================================
+GET {{base_url}}/messages?app=UNIA
+
+### ======================================
+### 13. PAGINACIÓN
+### ======================================
+GET {{base_url}}/messages?page=1&limit=20
+
+### ======================================
+### 14. FILTRO COMPLETO
+### ======================================
+GET {{base_url}}/messages?messageType=1&status=1&app=UNIA&page=1&limit=10
+
+### ======================================
+### 15. OBTENER MENSAJES POR CHAT ID
+### Nota: El chatId se genera automáticamente
+### ======================================
+GET {{base_url}}/messages/chat/a1b2c3d4e5f6g7h8
+
+### ======================================
+### 16. ENVIAR SMS A MÚLTIPLES NÚMEROS
+### Nota: Llamar el endpoint varias veces
+### ======================================
+POST {{base_url}}/send-message
+Content-Type: application/json
+
+{
+  "mode": "prod",
+  "phone": "+59178111111",
+  "message": "Código: 111111",
+  "app": "UNIA",
+  "messageType": 1,
+  "user": {
+    "ci": "11111111",
+    "nombreCompleto": "Usuario 1"
+  }
+}
+
+###
+POST {{base_url}}/send-message
+Content-Type: application/json
+
+{
+  "mode": "prod",
+  "phone": "+59178222222",
+  "message": "Código: 222222",
+  "app": "UNIA",
+  "messageType": 1,
+  "user": {
+    "ci": "22222222",
+    "nombreCompleto": "Usuario 2"
+  }
+}

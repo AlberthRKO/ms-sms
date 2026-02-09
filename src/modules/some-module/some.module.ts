@@ -4,6 +4,7 @@ import { SomeService } from './some.service';
 import { HttpModule } from '@nestjs/axios';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Message, MessageSchema } from './dto/some.schema';
+import { SomeGateway } from './some.gateway';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { Message, MessageSchema } from './dto/some.schema';
     }),
   ],
   controllers: [SomeController],
-  providers: [SomeService],
+  providers: [SomeService, SomeGateway],
   exports: [SomeService],
 })
 export class SomeModule {}
