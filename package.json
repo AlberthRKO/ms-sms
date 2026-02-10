@@ -38,8 +38,10 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/mongoose": "^11.0.4",
     "@nestjs/platform-fastify": "^11.1.12",
+    "@nestjs/platform-socket.io": "^11.1.13",
     "@nestjs/schedule": "^6.1.0",
     "@nestjs/swagger": "^11.2.0",
+    "@nestjs/websockets": "^11.1.13",
     "axios": "^1.13.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
@@ -49,7 +51,8 @@
     "fiscalia_bo-nest-helpers": "^2.0.26",
     "mongoose": "^9.1.6",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.3.1",
@@ -97,5 +100,6 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  }
+  },
+  "packageManager": "yarn@4.5.3+sha512.3003a14012e2987072d244c720506549c1aab73ee728208f1b2580a9fd67b92d61ba6b08fe93f6dce68fd771e3af1e59a0afa28dd242dd0940d73b95fedd4e90"
 }
