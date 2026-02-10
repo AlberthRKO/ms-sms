@@ -1,0 +1,159 @@
+stages:
+  - build
+  - test
+  - scan
+  - upload-dev
+  - upload-prod
+
+build:
+  stage: build
+  variables:
+    PROJECT_NAME: "ms-sms-v2"
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${HARBOR_HOST}\":{\"auth\":\"$(printf "%s:%s" "${HARBOR_USERNAME}" "${HARBOR_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - VERSION=$(cat package.json | grep version |  grep -oE '[0-9].[0-9]?[0-9].[0-9]?[0-9]' )
+    - echo "${CI_COMMIT_MESSAGE}"
+    - echo "${CI_PROJECT_DIR}"
+    - echo "${VERSION}"
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.build"
+      --destination "${HARBOR_HOST}/${PROJECT_NAME}/build:latest"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_COMMIT_MESSAGE !~ /migrate/'
+      when: on_success
+
+test:
+  stage: test
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  needs: ['build']
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${HARBOR_HOST}\":{\"auth\":\"$(printf "%s:%s" "${HARBOR_USERNAME}" "${HARBOR_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - VERSION=$(cat package.json | grep version |  grep -oE '[0-9].[0-9]?[0-9].[0-9]?[0-9]' )
+    - echo "${CI_COMMIT_MESSAGE}"
+    - echo "${CI_PROJECT_DIR}"
+    - echo "${VERSION}"
+    - export IFS=''
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --build-arg ENV_MONGO_DB_URL=$ENV_MONGO_DB_URL
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.test"
+      --no-push
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "stage" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master")
+      when: on_success
+
+sonarqube-check:
+  stage: scan
+  image:
+    name: sonarsource/sonar-scanner-cli:11
+    entrypoint: [""]
+  needs: ['test']
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  script:
+    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "stage" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master")
+      when: on_success
+
+trivy:
+  stage: scan
+  image:
+    name: docker.io/aquasec/trivy:latest
+    entrypoint: [""]
+  needs: ['sonarqube-check']
+  variables:
+    # No need to clone the repo, we exclusively work on artifacts. See
+    # https://docs.gitlab.com/ee/ci/runners/configure_runners.html#git-strategy
+    GIT_STRATEGY: none
+    PROJECT_NAME: "ms-sms-v2"
+    TRIVY_USERNAME: "${HARBOR_USERNAME}"
+    TRIVY_PASSWORD: "${HARBOR_PASSWORD}"
+    TRIVY_AUTH_URL: "${HARBOR_URL}"
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: ".trivycache/"
+    FULL_IMAGE_NAME: ${HARBOR_HOST}/${PROJECT_NAME}/build:latest
+  script:
+    - trivy --version
+    # update vulnerabilities db
+    - time trivy image --download-db-only
+    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
+    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
+        --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
+    # Prints full report
+    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
+    # Fail on critical vulnerabilities
+    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
+  cache:
+    paths:
+      - .trivycache/
+  # Enables https://docs.gitlab.com/ee/user/application_security/container_scanning/ (Container Scanning report is available on GitLab EE Ultimate or GitLab.com Gold)
+  artifacts:
+    when: always
+    reports:
+      container_scanning: gl-container-scanning-report.json
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "stage" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master")
+      when: on_success
+
+upload-dev:
+  stage: upload-dev
+  variables:
+    PROJECT_NAME: "ms-sms-v2"
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  needs: ['test']
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${HARBOR_HOST}\":{\"auth\":\"$(printf "%s:%s" "${HARBOR_USERNAME}" "${HARBOR_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - VERSION=$(cat package.json | grep version |  grep -oE '[0-9].[0-9]?[0-9].[0-9]?[0-9]' )
+    - echo "${CI_COMMIT_MESSAGE}"
+    - echo "${CI_PROJECT_DIR}"
+    - echo "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
+    - echo "${VERSION}"
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.upload"
+      --destination "${HARBOR_HOST}/${PROJECT_NAME}/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}:${VERSION}"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+      when: on_success
+
+upload-prod:
+  stage: upload-prod
+  variables:
+    PROJECT_NAME: "ms-sms-v2"
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  needs: ['test']
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${HARBOR_HOST}\":{\"auth\":\"$(printf "%s:%s" "${HARBOR_USERNAME}" "${HARBOR_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - VERSION=$(cat package.json | grep version |  grep -oE '[0-9].[0-9]?[0-9].[0-9]?[0-9]' )
+    - echo "${CI_COMMIT_MESSAGE}"
+    - echo "${CI_PROJECT_DIR}"
+    - echo "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
+    - echo "${VERSION}"
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.upload"
+      --destination "${HARBOR_HOST}/${PROJECT_NAME}/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}:${VERSION}"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      when: on_success
