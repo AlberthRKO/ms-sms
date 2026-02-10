@@ -8,7 +8,8 @@ ENV TZ=America/La_Paz
 
 
 COPY package.json ./
+COPY yarn.lock ./
 COPY . .
 
-RUN npm install
-RUN npm run build
+RUN yarn install
+RUN yarn build
