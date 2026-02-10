@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-FROM harbor.mp.gob.bo/registro/dockers/node:24.12.0-alpine AS deployment
+FROM harbor.mp.gob.bo/registro/dockers/node:25.6.0-alpine AS deployment
 
 WORKDIR /usr/src/app
 

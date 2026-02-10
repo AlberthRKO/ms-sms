@@ -1,4 +1,4 @@
-FROM harbor.mp.gob.bo/ms-biometrico/build:latest AS development
+FROM harbor.mp.gob.bo/ms-sms-v2/build:latest AS development
 WORKDIR /usr/src/app
 ENV TZ=America/La_Paz
 COPY . .
