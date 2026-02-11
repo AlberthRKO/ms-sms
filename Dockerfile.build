@@ -2,7 +2,7 @@
 # # BUILD FOR LOCAL DEVELOPMENT
 ###################
 
-FROM harbor.mp.gob.bo/registro/dockers/node:22.12-alpine AS development
+FROM harbor.mp.gob.bo/registro/dockers/node:22.22.0-alpine AS development
 WORKDIR /usr/src/app
 ENV TZ=America/La_Paz
 
