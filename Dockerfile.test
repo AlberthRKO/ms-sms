@@ -1,0 +1,9 @@
+FROM harbor.mp.gob.bo/ms-sms-v2/build:latest AS development
+WORKDIR /usr/src/app
+ENV TZ=America/La_Paz
+COPY . .
+
+ARG ENV_MONGO_DB_URL
+ARG ENV_MONGO_DB_URL=$ENV_MONGO_DB_URL
+RUN echo $ENV_MONGO_DB_URL
+RUN yarn test
