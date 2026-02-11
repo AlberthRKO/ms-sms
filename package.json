@@ -1,6 +1,6 @@
 {
   "name": "ms-sms-v2",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "ms-sms-v2 is a microservice for send text SMS",
   "author": "DNTIC - Ministerio Público",
   "contact": {
