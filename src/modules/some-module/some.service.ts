@@ -9,9 +9,8 @@ import {
   UpdateMessageStatusDTO,
   ListMessagesQueryDTO,
 } from './dto/some.input.dto';
-import { MessageStatus, MessageType } from './dto/message-status.enum';
+import { MessageStatus } from './dto/message-status.enum';
 import { SomeGateway } from './some.gateway';
-import { createHash } from 'crypto';
 
 @Injectable()
 export class SomeService {
@@ -24,54 +23,42 @@ export class SomeService {
   ) {}
 
   /**
-   * Genera un chatId único basado en el teléfono y la aplicación
-   * Esto permite agrupar todos los mensajes del mismo usuario en la misma app
-   */
-  private generateChatId(phone: string, app: string): string {
-    // Normalizar el teléfono (quitar caracteres especiales)
-    const normalizedPhone = phone.replace(/[^0-9]/g, '');
-    const normalizedApp = app.toLowerCase().trim();
-
-    // Generar hash MD5 para un ID consistente
-    const hash = createHash('md5').update(`${normalizedPhone}-${normalizedApp}`).digest('hex');
-
-    return hash.substring(0, 16); // Usar solo los primeros 16 caracteres
-  }
-
-  /**
    * Crea un mensaje SMS y emite evento WebSocket para que la app externa lo envíe
    * SOLO emite el evento 'send-message', NO emite 'send-message-status'
    * @param inputDto Datos del mensaje a enviar
    * @returns Datos del mensaje creado
    */
   async sendMessageByPhone(inputDto: SendMessageTextDTO): Promise<ResponseDTO<any>> {
-    const { message, app, user, phone, mode, messageType } = inputDto;
+    const { origen, destino } = inputDto;
 
-    // Generar chatId para agrupar mensajes
-    const chatId = this.generateChatId(phone, app);
-
-    // Crear el mensaje con estado inicial PENDING
+    // Crear el mensaje con estado inicial PENDIENTE
     const createdMessage = await this.messageModel.create({
-      chatId,
-      message,
-      app,
-      user,
-      phone,
-      mode,
-      messageType,
-      status: MessageStatus.PENDING, // Siempre inicia como pendiente
+      origen: {
+        aplicacion: origen.aplicacion,
+        modulo: origen.modulo,
+        numero: origen.numero,
+        usuario: {
+          ci: origen.usuario.ci,
+          nombreCompleto: origen.usuario.nombreCompleto,
+        },
+      },
+      destino: {
+        numero: destino.numero,
+        mensaje: destino.mensaje,
+        fichero: destino.fichero || false,
+        tipo: destino.tipo,
+      },
+      estado: MessageStatus.PENDING, // Siempre inicia como "Pendiente"
     });
 
     const payload = {
-      messageId: createdMessage._id.toString(),
-      chatId: createdMessage.chatId,
-      message: createdMessage.message,
-      app: createdMessage.app,
-      user: createdMessage.user,
-      phone: createdMessage.phone,
-      mode: createdMessage.mode,
-      messageType: createdMessage.messageType,
-      status: createdMessage.status,
+      _id: createdMessage._id.toString(),
+      origen: createdMessage.origen,
+      destino: {
+        ...createdMessage.destino,
+        tipo: createdMessage.destino.tipo as any,
+      },
+      estado: createdMessage.estado as any,
       createdAt: createdMessage.createdAt,
       updatedAt: createdMessage.updatedAt,
     };
@@ -80,7 +67,7 @@ export class SomeService {
     this.someGateway.emitSendMessage(payload);
 
     this.logger.log(
-      `Mensaje creado - ChatID: ${chatId}, ID: ${payload.messageId}, Tipo: ${messageType === MessageType.CODE ? 'CÓDIGO' : 'INFORMATIVO'}, Tel: ${phone}`,
+      `Mensaje creado - ID: ${payload._id}, Tipo: ${destino.tipo}, App: ${origen.aplicacion}, Destino: ${destino.numero}`,
     );
 
     return dataResponseSuccess({ data: payload }, { message: 'Mensaje creado exitosamente' });
@@ -96,7 +83,7 @@ export class SomeService {
   async updateMessageStatus(inputDto: UpdateMessageStatusDTO): Promise<ResponseDTO<any>> {
     const updatedMessage = await this.messageModel.findByIdAndUpdate(
       inputDto.messageId,
-      { status: inputDto.status },
+      { estado: inputDto.estado },
       { new: true },
     );
 
@@ -105,15 +92,13 @@ export class SomeService {
     }
 
     const payload = {
-      messageId: updatedMessage._id.toString(),
-      chatId: updatedMessage.chatId,
-      message: updatedMessage.message,
-      app: updatedMessage.app,
-      user: updatedMessage.user,
-      phone: updatedMessage.phone,
-      mode: updatedMessage.mode,
-      messageType: updatedMessage.messageType,
-      status: updatedMessage.status,
+      _id: updatedMessage._id.toString(),
+      origen: updatedMessage.origen,
+      destino: {
+        ...updatedMessage.destino,
+        tipo: updatedMessage.destino.tipo as any,
+      },
+      estado: updatedMessage.estado as any,
       createdAt: updatedMessage.createdAt,
       updatedAt: updatedMessage.updatedAt,
     };
@@ -121,29 +106,34 @@ export class SomeService {
     // Emitir evento de actualización de estado
     this.someGateway.emitStatusUpdate(payload);
 
-    const statusLabel = inputDto.status === MessageStatus.SENT ? 'ENVIADO' : 'FALLIDO';
     this.logger.log(
-      `Estado actualizado - ChatID: ${payload.chatId}, ID: ${payload.messageId}, Estado: ${statusLabel}`,
+      `Estado actualizado - ID: ${payload._id}, Estado: ${inputDto.estado}, App: ${updatedMessage.origen.aplicacion}`,
     );
 
     return dataResponseSuccess({ data: payload }, { message: 'Estado actualizado exitosamente' });
   }
 
   /**
+   * Escapa caracteres especiales de regex
+   */
+  private escapeRegex(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
    * Lista los mensajes guardados con filtros opcionales
-   * Soporta filtrado por chatId para ver conversaciones agrupadas
    * @param queryDto Filtros de búsqueda y paginación
    * @returns Lista de mensajes con paginación
    */
   async listMessages(queryDto: ListMessagesQueryDTO): Promise<ResponseDTO<any>> {
-    const { messageType, status, phone, app, page = 1, limit = 10 } = queryDto;
+    const { tipo, estado, numero, aplicacion, page = 1, limit = 10 } = queryDto;
 
     // Construir filtros dinámicamente
     const filter: any = {};
-    if (messageType !== undefined) filter.messageType = messageType;
-    if (status !== undefined) filter.status = status;
-    if (phone) filter.phone = { $regex: phone, $options: 'i' };
-    if (app) filter.app = { $regex: app, $options: 'i' };
+    if (tipo !== undefined) filter['destino.tipo'] = tipo;
+    if (estado !== undefined) filter.estado = estado;
+    if (numero) filter['destino.numero'] = { $regex: this.escapeRegex(numero), $options: 'i' };
+    if (aplicacion) filter['origen.aplicacion'] = { $regex: this.escapeRegex(aplicacion), $options: 'i' };
 
     const skip = (page - 1) * limit;
 
@@ -153,75 +143,30 @@ export class SomeService {
       this.messageModel.countDocuments(filter),
     ]);
 
-    const formattedMessages = messages.map((msg: any) => ({
-      messageId: msg._id.toString(),
-      chatId: msg.chatId,
-      message: msg.message,
-      app: msg.app,
-      user: msg.user,
-      phone: msg.phone,
-      mode: msg.mode,
-      messageType: msg.messageType,
-      status: msg.status,
-      createdAt: msg.createdAt,
-      updatedAt: msg.updatedAt,
-    }));
+    const formattedMessages = messages
+      .filter((msg: any) => msg.origen && msg.destino) // Filtrar solo mensajes con estructura válida
+      .map((msg: any) => ({
+        _id: msg._id.toString(),
+        origen: msg.origen,
+        destino: {
+          ...msg.destino,
+          tipo: msg.destino.tipo as any,
+        },
+        estado: msg.estado as any,
+        createdAt: msg.createdAt,
+        updatedAt: msg.updatedAt,
+      }));
 
     return dataResponseSuccess(
       {
         data: formattedMessages,
         pagination: {
-          total,
+          total: formattedMessages.length, // Usar longitud de mensajes filtrados
           page,
           size: limit,
         },
       },
       { message: 'Mensajes obtenidos exitosamente' },
-    );
-  }
-
-  /**
-   * Obtiene todos los mensajes de un chat específico (agrupados por chatId)
-   * Útil para ver el historial de mensajes de un teléfono+app
-   */
-  async getMessagesByChatId(chatId: string, page = 1, limit = 50): Promise<ResponseDTO<any>> {
-    const skip = (page - 1) * limit;
-
-    const [messages, total] = await Promise.all([
-      this.messageModel
-        .find({ chatId })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .exec(),
-      this.messageModel.countDocuments({ chatId }),
-    ]);
-
-    const formattedMessages = messages.map((msg: any) => ({
-      messageId: msg._id.toString(),
-      chatId: msg.chatId,
-      message: msg.message,
-      app: msg.app,
-      user: msg.user,
-      phone: msg.phone,
-      mode: msg.mode,
-      messageType: msg.messageType,
-      status: msg.status,
-      createdAt: msg.createdAt,
-      updatedAt: msg.updatedAt,
-    }));
-
-    return dataResponseSuccess(
-      {
-        data: formattedMessages,
-        pagination: {
-          total,
-          page,
-          size: limit,
-        },
-      },
-      { message: 'Mensajes del chat obtenidos exitosamente' },
     );
   }
 }

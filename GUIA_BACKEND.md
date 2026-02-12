@@ -20,8 +20,7 @@
 
 - ✅ Crear y almacenar mensajes SMS
 - ✅ Comunicación en tiempo real mediante WebSockets
-- ✅ Gestión de estados de mensajes (pendiente, enviado, fallido)
-- ✅ Agrupación de mensajes por chat (teléfono + aplicación)
+- ✅ Gestión de estados de mensajes (Pendiente, Enviado, Fallido)
 - ✅ Consulta de historial de mensajes con filtros y paginación
 - ✅ Diferenciación entre SMS con código y mensajes informativos
 
@@ -119,8 +118,7 @@ Crea un nuevo mensaje SMS y emite evento WebSocket `send-message`.
 
 **Descripción:**
 
-- Crea un mensaje en la base de datos con estado `PENDING`
-- Genera automáticamente un `chatId` único (hash MD5 de teléfono + app)
+- Crea un mensaje en la base de datos con estado `Pendiente`
 - Emite el evento `send-message` para que apps externas lo procesen
 - NO emite automáticamente el evento de estado
 
@@ -128,18 +126,20 @@ Crea un nuevo mensaje SMS y emite evento WebSocket `send-message`.
 
 ```json
 {
-  "phone": "+59178945612",
-  "message": "Tu código de verificación es: 123456",
-  "app": "UNIA",
-  "messageType": 1,
-  "mode": "prod",
-  "user": {
-    "ci": "12345678",
-    "nombreCompleto": "Juan Pérez",
-    "msPersonaId": 100,
-    "funcionarioId": 50,
-    "institucionId": 1,
-    "oficinaId": 10
+  "origen": {
+    "aplicacion": "JL-Penal",
+    "modulo": "Login",
+    "numero": "+59163354864",
+    "usuario": {
+      "ci": "14258827",
+      "nombreCompleto": "ALBERTO ORLANDO PAREDES MAMANI"
+    }
+  },
+  "destino": {
+    "numero": "+59163354864",
+    "mensaje": "Codigo ROMA: 693484",
+    "fichero": false,
+    "tipo": "Codigo"
   }
 }
 ```
@@ -151,17 +151,25 @@ Crea un nuevo mensaje SMS y emite evento WebSocket `send-message`.
   "success": true,
   "message": "Mensaje creado exitosamente",
   "data": {
-    "messageId": "67a42c2a88453f4c8d5b9d0e",
-    "chatId": "a1b2c3d4e5f6g7h8",
-    "message": "Tu código de verificación es: 123456",
-    "app": "UNIA",
-    "user": { ... },
-    "phone": "+59178945612",
-    "mode": "prod",
-    "messageType": 1,
-    "status": 0,
-    "createdAt": "2026-02-10T13:00:00.000Z",
-    "updatedAt": "2026-02-10T13:00:00.000Z"
+    "_id": "698c7c7c3f52a806f3dea18d",
+    "origen": {
+      "aplicacion": "JL-Penal",
+      "modulo": "Login",
+      "numero": "+59163354864",
+      "usuario": {
+        "ci": "14258827",
+        "nombreCompleto": "ALBERTO ORLANDO PAREDES MAMANI"
+      }
+    },
+    "destino": {
+      "numero": "+59163354864",
+      "mensaje": "Codigo ROMA: 693484",
+      "fichero": false,
+      "tipo": "Codigo"
+    },
+    "estado": "Pendiente",
+    "createdAt": "2026-02-11T12:56:28.443Z",
+    "updatedAt": "2026-02-11T12:56:28.443Z"
   }
 }
 ```
@@ -175,15 +183,15 @@ Actualiza el estado de un mensaje existente y emite evento `send-message-status`
 **Descripción:**
 
 - La app externa llama este endpoint después de enviar el SMS
-- Actualiza el estado del mensaje (PENDING → SENT o FAILED)
+- Actualiza el estado del mensaje (Pendiente → Enviado o Fallido)
 - Emite el evento `send-message-status` para notificar el cambio
 
 **Request Body:**
 
 ```json
 {
-  "messageId": "67a42c2a88453f4c8d5b9d0e",
-  "status": 1
+  "messageId": "698c7c7c3f52a806f3dea18d",
+  "estado": "Enviado"
 }
 ```
 
@@ -194,11 +202,25 @@ Actualiza el estado de un mensaje existente y emite evento `send-message-status`
   "success": true,
   "message": "Estado actualizado exitosamente",
   "data": {
-    "messageId": "67a42c2a88453f4c8d5b9d0e",
-    "chatId": "a1b2c3d4e5f6g7h8",
-    "message": "Tu código de verificación es: 123456",
-    "status": 1,
-    ...
+    "_id": "698c7c7c3f52a806f3dea18d",
+    "origen": {
+      "aplicacion": "JL-Penal",
+      "modulo": "Login",
+      "numero": "+59163354864",
+      "usuario": {
+        "ci": "14258827",
+        "nombreCompleto": "ALBERTO ORLANDO PAREDES MAMANI"
+      }
+    },
+    "destino": {
+      "numero": "+59163354864",
+      "mensaje": "Codigo ROMA: 693484",
+      "fichero": false,
+      "tipo": "Codigo"
+    },
+    "estado": "Enviado",
+    "createdAt": "2026-02-11T12:56:28.443Z",
+    "updatedAt": "2026-02-11T12:56:28.699Z"
   }
 }
 ```
@@ -211,17 +233,17 @@ Lista todos los mensajes con filtros opcionales y paginación.
 
 **Query Parameters:**
 
-- `messageType` (opcional): Filtrar por tipo (1=código, 2=informativo)
-- `status` (opcional): Filtrar por estado (0=pendiente, 1=enviado, 2=fallido)
-- `phone` (opcional): Filtrar por número de teléfono
-- `app` (opcional): Filtrar por aplicación
+- `tipo` (opcional): Filtrar por tipo ("Codigo" o "Informativo")
+- `estado` (opcional): Filtrar por estado ("Pendiente", "Enviado", "Fallido")
+- `numero` (opcional): Filtrar por número de destino
+- `aplicacion` (opcional): Filtrar por aplicación de origen
 - `page` (opcional, default=1): Número de página
 - `limit` (opcional, default=10): Registros por página
 
 **Ejemplo:**
 
 ```
-GET /sms/messages?messageType=1&status=1&page=1&limit=20
+GET /sms/messages?tipo=Codigo&estado=Enviado&page=1&limit=20
 ```
 
 **Response:**
@@ -232,56 +254,31 @@ GET /sms/messages?messageType=1&status=1&page=1&limit=20
   "message": "Mensajes obtenidos exitosamente",
   "data": [
     {
-      "messageId": "67a42c2a88453f4c8d5b9d0e",
-      "chatId": "a1b2c3d4e5f6g7h8",
-      "message": "Tu código es: 123456",
-      "status": 1,
-      ...
+      "_id": "698c7c7c3f52a806f3dea18d",
+      "origen": {
+        "aplicacion": "JL-Penal",
+        "modulo": "Login",
+        "numero": "+59163354864",
+        "usuario": {
+          "ci": "14258827",
+          "nombreCompleto": "ALBERTO ORLANDO PAREDES MAMANI"
+        }
+      },
+      "destino": {
+        "numero": "+59163354864",
+        "mensaje": "Codigo ROMA: 693484",
+        "fichero": false,
+        "tipo": "Codigo"
+      },
+      "estado": "Enviado",
+      "createdAt": "2026-02-11T12:56:28.443Z",
+      "updatedAt": "2026-02-11T12:56:28.699Z"
     }
   ],
   "pagination": {
     "total": 150,
     "page": 1,
     "size": 20
-  }
-}
-```
-
----
-
-### 4. **GET** `/sms/messages/chat/:chatId`
-
-Obtiene todos los mensajes de un chat específico (agrupados por chatId).
-
-**Path Parameters:**
-
-- `chatId`: ID del chat (generado automáticamente)
-
-**Query Parameters:**
-
-- `page` (opcional, default=1)
-- `limit` (opcional, default=50)
-
-**Ejemplo:**
-
-```
-GET /sms/messages/chat/a1b2c3d4e5f6g7h8?page=1&limit=50
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "message": "Mensajes del chat obtenidos exitosamente",
-  "data": [
-    { ... },
-    { ... }
-  ],
-  "pagination": {
-    "total": 25,
-    "page": 1,
-    "size": 50
   }
 }
 ```
@@ -296,30 +293,35 @@ DTO para crear un nuevo mensaje SMS.
 
 ```typescript
 {
-  phone: string;          // Teléfono con código de país (+59178945612)
-  message: string;        // Contenido del mensaje (máx. 4096 caracteres)
-  app: string;            // Nombre de la aplicación que envía
-  messageType: number;    // 1: SMS con código, 2: Mensaje informativo
-  mode?: string;          // Entorno: prod, dev, test, stage (default: prod)
-  user: {                 // Datos del usuario que envía
-    ci: string;
-    nombreCompleto: string;
-    msPersonaId?: number;
-    funcionarioId?: number;
-    institucionId?: number;
-    oficinaId?: number;
+  origen: {
+    aplicacion: string;      // Aplicación de origen (ej: "JL-Penal", "ms-auth")
+    modulo: string;          // Módulo de origen (ej: "Login", "Registro")
+    numero: string;          // Número desde donde se envía (+59163354864)
+    usuario: {
+      ci: string;            // CI del usuario
+      nombreCompleto: string; // Nombre completo del usuario
+    }
+  },
+  destino: {
+    numero: string;          // Número destino que recibirá el SMS (+59163354864)
+    mensaje: string;         // Contenido del mensaje (máx. 4096 caracteres)
+    fichero: boolean;        // Indica si incluye fichero adjunto (default: false)
+    tipo: string;            // "Codigo" o "Informativo"
   }
 }
 ```
 
 **Validaciones:**
 
-- `phone`: 8-15 dígitos, debe coincidir con formato de teléfono internacional
-- `message`: Obligatorio, máximo 4096 caracteres
-- `app`: Obligatorio, cadena de texto
-- `messageType`: Debe ser 1 o 2
-- `user.ci`: Obligatorio
-- `user.nombreCompleto`: Obligatorio
+- `origen.aplicacion`: Obligatorio, cadena de texto
+- `origen.modulo`: Obligatorio, cadena de texto
+- `origen.numero`: 8-15 dígitos, debe coincidir con formato de teléfono internacional
+- `origen.usuario.ci`: Obligatorio
+- `origen.usuario.nombreCompleto`: Obligatorio
+- `destino.numero`: 8-15 dígitos, debe coincidir con formato de teléfono internacional
+- `destino.mensaje`: Obligatorio, máximo 4096 caracteres
+- `destino.fichero`: Booleano, opcional (default: false)
+- `destino.tipo`: Debe ser "Codigo" o "Informativo"
 
 ---
 
@@ -330,14 +332,14 @@ DTO para actualizar el estado de un mensaje.
 ```typescript
 {
   messageId: string; // ObjectId de MongoDB
-  status: number; // 0: Pendiente, 1: Enviado, 2: Fallido
+  estado: string; // "Pendiente", "Enviado" o "Fallido"
 }
 ```
 
 **Validaciones:**
 
 - `messageId`: Debe ser un ObjectId válido de MongoDB
-- `status`: Debe ser 0, 1 o 2
+- `estado`: Debe ser "Pendiente", "Enviado" o "Fallido"
 
 ---
 
@@ -347,12 +349,12 @@ DTO para buscar y filtrar mensajes.
 
 ```typescript
 {
-  messageType?: number;  // Filtro por tipo (1 o 2)
-  status?: number;       // Filtro por estado (0, 1 o 2)
-  phone?: string;        // Filtro por teléfono (búsqueda parcial)
-  app?: string;          // Filtro por aplicación (búsqueda parcial)
-  page?: number;         // Número de página (default: 1)
-  limit?: number;        // Registros por página (default: 10)
+  tipo?: string;        // Filtro por tipo ("Codigo" o "Informativo")
+  estado?: string;      // Filtro por estado ("Pendiente", "Enviado", "Fallido")
+  numero?: string;      // Filtro por número de destino (búsqueda parcial)
+  aplicacion?: string;  // Filtro por aplicación (búsqueda parcial)
+  page?: number;        // Número de página (default: 1)
+  limit?: number;       // Registros por página (default: 10)
 }
 ```
 
@@ -364,8 +366,8 @@ DTO para buscar y filtrar mensajes.
 
 ```typescript
 enum MessageType {
-  CODE = 1, // SMS con código de verificación
-  INFO = 2, // Mensaje informativo general
+  CODE = 'Codigo', // SMS con código de verificación
+  INFO = 'Informativo', // Mensaje informativo general
 }
 ```
 
@@ -373,20 +375,9 @@ enum MessageType {
 
 ```typescript
 enum MessageStatus {
-  PENDING = 0, // Pendiente de envío
-  SENT = 1, // Enviado correctamente
-  FAILED = 2, // Falló el envío
-}
-```
-
-#### ENVIRONMENT_ENUM
-
-```typescript
-enum ENVIRONMENT_ENUM {
-  PROD = 'prod',
-  DEV = 'dev',
-  TEST = 'test',
-  STAGE = 'stage',
+  PENDING = 'Pendiente', // Pendiente de envío
+  SENT = 'Enviado', // Enviado correctamente
+  FAILED = 'Fallido', // Falló el envío
 }
 ```
 
@@ -418,15 +409,23 @@ El servicio utiliza **Socket.io** para comunicación en tiempo real.
 
 ```typescript
 {
-  messageId: string;
-  chatId: string;
-  message: string;
-  app: string;
-  user: object;
-  phone: string;
-  mode: string;
-  messageType: number;
-  status: number;
+  _id: string;
+  origen: {
+    aplicacion: string;
+    modulo: string;
+    numero: string;
+    usuario: {
+      ci: string;
+      nombreCompleto: string;
+    }
+  }
+  destino: {
+    numero: string;
+    mensaje: string;
+    fichero: boolean;
+    tipo: string;
+  }
+  estado: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -441,7 +440,7 @@ Notifica a las apps externas que hay un nuevo mensaje SMS que debe ser enviado.
 socket.on('send-message', (payload) => {
   console.log('Nuevo mensaje recibido:', payload);
   // La app externa procesa y envía el SMS
-  enviarSMS(payload.phone, payload.message);
+  enviarSMS(payload.destino.numero, payload.destino.mensaje);
 });
 ```
 
@@ -457,15 +456,23 @@ socket.on('send-message', (payload) => {
 
 ```typescript
 {
-  messageId: string;
-  chatId: string;
-  message: string;
-  app: string;
-  user: object;
-  phone: string;
-  mode: string;
-  messageType: number;
-  status: number; // 0: Pendiente, 1: Enviado, 2: Fallido
+  _id: string;
+  origen: {
+    aplicacion: string;
+    modulo: string;
+    numero: string;
+    usuario: {
+      ci: string;
+      nombreCompleto: string;
+    }
+  }
+  destino: {
+    numero: string;
+    mensaje: string;
+    fichero: boolean;
+    tipo: string;
+  }
+  estado: string; // "Pendiente", "Enviado" o "Fallido"
   createdAt: Date;
   updatedAt: Date;
 }
@@ -478,7 +485,7 @@ Notifica a los clientes conectados sobre cambios en el estado de un mensaje.
 
 ```javascript
 socket.on('send-message-status', (payload) => {
-  console.log(`Mensaje ${payload.messageId} cambió a estado: ${payload.status}`);
+  console.log(`Mensaje ${payload._id} cambió a estado: ${payload.estado}`);
   actualizarUI(payload);
 });
 ```
@@ -498,21 +505,22 @@ Almacena todos los mensajes SMS creados.
 ```typescript
 {
   _id: ObjectId,              // ID único generado por MongoDB
-  chatId: string,             // Hash MD5 de teléfono+app (16 caracteres)
-  mode: string,               // Entorno: prod, dev, test, stage
-  phone: string,              // Número de teléfono con código de país
-  message: string,            // Contenido del mensaje SMS
-  app: string,                // Nombre de la aplicación
-  user: {                     // Información del usuario
-    ci: string,
-    nombreCompleto: string,
-    msPersonaId?: number,
-    funcionarioId?: number,
-    institucionId?: number,
-    oficinaId?: number
+  origen: {                   // Información de origen
+    aplicacion: string,       // Aplicación de origen (ej: "JL-Penal")
+    modulo: string,           // Módulo de origen (ej: "Login")
+    numero: string,           // Número desde donde se envía
+    usuario: {
+      ci: string,             // CI del usuario
+      nombreCompleto: string  // Nombre completo del usuario
+    }
   },
-  messageType: number,        // 1: Código, 2: Informativo
-  status: number,             // 0: Pendiente, 1: Enviado, 2: Fallido
+  destino: {                  // Información de destino
+    numero: string,           // Número que recibirá el SMS
+    mensaje: string,          // Contenido del mensaje
+    fichero: boolean,         // Indica si incluye fichero (default: false)
+    tipo: string              // "Codigo" o "Informativo"
+  },
+  estado: string,             // "Pendiente", "Enviado" o "Fallido"
   createdAt: Date,            // Timestamp de creación
   updatedAt: Date             // Timestamp de última actualización
 }
@@ -522,11 +530,10 @@ Almacena todos los mensajes SMS creados.
 
 ```javascript
 {
-  chatId: -1,        // Índice descendente para agrupación
-  phone: -1,         // Índice para búsquedas por teléfono
-  app: -1,           // Índice para búsquedas por app
-  messageType: -1,   // Índice para filtrado por tipo
-  status: -1         // Índice para filtrado por estado
+  'destino.numero': -1,       // Índice para búsquedas por número destino
+  'destino.tipo': -1,         // Índice para filtrado por tipo
+  'origen.aplicacion': -1,    // Índice para búsquedas por aplicación
+  estado: -1                  // Índice para filtrado por estado
 }
 ```
 
@@ -534,24 +541,25 @@ Almacena todos los mensajes SMS creados.
 
 ```json
 {
-  "_id": "67a42c2a88453f4c8d5b9d0e",
-  "chatId": "a1b2c3d4e5f6g7h8",
-  "mode": "prod",
-  "phone": "+59178945612",
-  "message": "Tu código de verificación es: 123456",
-  "app": "UNIA",
-  "user": {
-    "ci": "12345678",
-    "nombreCompleto": "Juan Pérez",
-    "msPersonaId": 100,
-    "funcionarioId": 50,
-    "institucionId": 1,
-    "oficinaId": 10
+  "_id": "698c7c7c3f52a806f3dea18d",
+  "origen": {
+    "aplicacion": "JL-Penal",
+    "modulo": "Login",
+    "numero": "+59163354864",
+    "usuario": {
+      "ci": "14258827",
+      "nombreCompleto": "ALBERTO ORLANDO PAREDES MAMANI"
+    }
   },
-  "messageType": 1,
-  "status": 0,
-  "createdAt": "2026-02-10T13:00:00.000Z",
-  "updatedAt": "2026-02-10T13:00:00.000Z"
+  "destino": {
+    "numero": "+59163354864",
+    "mensaje": "Codigo ROMA: 693484",
+    "fichero": false,
+    "tipo": "Codigo"
+  },
+  "estado": "Enviado",
+  "createdAt": "2026-02-11T12:56:28.443Z",
+  "updatedAt": "2026-02-11T12:56:28.699Z"
 }
 ```
 
@@ -603,8 +611,7 @@ Almacena todos los mensajes SMS creados.
 
 1. **Creación de Mensaje:**
    - El cliente web/app llama a `POST /sms/send-message`
-   - Backend valida el DTO y crea el mensaje con estado `PENDING`
-   - Se genera un `chatId` único (hash MD5 de teléfono + app)
+   - Backend valida el DTO y crea el mensaje con estado `Pendiente`
    - El mensaje se guarda en MongoDB
    - Se retorna respuesta HTTP 201 al cliente
 
@@ -629,14 +636,20 @@ Almacena todos los mensajes SMS creados.
 curl -X POST http://localhost:3515/api/v1/sms/send-message \
   -H "Content-Type: application/json" \
   -d '{
-    "phone": "+59178945612",
-    "message": "Tu código de verificación es: 785412",
-    "app": "UNIA",
-    "messageType": 1,
-    "mode": "prod",
-    "user": {
-      "ci": "12345678",
-      "nombreCompleto": "Juan Pérez"
+    "origen": {
+      "aplicacion": "JL-Penal",
+      "modulo": "Login",
+      "numero": "+59163354864",
+      "usuario": {
+        "ci": "14258827",
+        "nombreCompleto": "ALBERTO ORLANDO PAREDES MAMANI"
+      }
+    },
+    "destino": {
+      "numero": "+59163354864",
+      "mensaje": "Codigo ROMA: 693484",
+      "fichero": false,
+      "tipo": "Codigo"
     }
   }'
 ```
@@ -647,45 +660,60 @@ curl -X POST http://localhost:3515/api/v1/sms/send-message \
 curl -X POST http://localhost:3515/api/v1/sms/send-message \
   -H "Content-Type: application/json" \
   -d '{
-    "phone": "+59172345678",
-    "message": "Su cita está programada para el 15/02/2026 a las 10:00 AM",
-    "app": "SISTEMA_CITAS",
-    "messageType": 2,
-    "user": {
-      "ci": "87654321",
-      "nombreCompleto": "María López"
+    "origen": {
+      "aplicacion": "SISTEMA_CITAS",
+      "modulo": "Notificaciones",
+      "numero": "+59172345678",
+      "usuario": {
+        "ci": "87654321",
+        "nombreCompleto": "María López"
+      }
+    },
+    "destino": {
+      "numero": "+59172345678",
+      "mensaje": "Su cita está programada para el 15/02/2026 a las 10:00 AM",
+      "fichero": false,
+      "tipo": "Informativo"
     }
   }'
 ```
 
-### Ejemplo 3: Actualizar Estado
+### Ejemplo 3: Actualizar Estado a Enviado
 
 ```bash
 curl -X POST http://localhost:3515/api/v1/sms/send-message/status \
   -H "Content-Type: application/json" \
   -d '{
-    "messageId": "67a42c2a88453f4c8d5b9d0e",
-    "status": 1
+    "messageId": "698c7c7c3f52a806f3dea18d",
+    "estado": "Enviado"
   }'
 ```
 
-### Ejemplo 4: Listar Mensajes con Filtros
+### Ejemplo 4: Actualizar Estado a Fallido
+
+```bash
+curl -X POST http://localhost:3515/api/v1/sms/send-message/status \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messageId": "698c7c7c3f52a806f3dea18d",
+    "estado": "Fallido"
+  }'
+```
+
+### Ejemplo 5: Listar Mensajes con Filtros
 
 ```bash
 # Todos los mensajes enviados exitosamente
-curl "http://localhost:3515/api/v1/sms/messages?status=1&page=1&limit=20"
+curl "http://localhost:3515/api/v1/sms/messages?estado=Enviado&page=1&limit=20"
 
 # Mensajes de tipo código pendientes
-curl "http://localhost:3515/api/v1/sms/messages?messageType=1&status=0"
+curl "http://localhost:3515/api/v1/sms/messages?tipo=Codigo&estado=Pendiente"
 
 # Mensajes de una app específica
-curl "http://localhost:3515/api/v1/sms/messages?app=UNIA"
-```
+curl "http://localhost:3515/api/v1/sms/messages?aplicacion=JL-Penal"
 
-### Ejemplo 5: Obtener Chat por chatId
-
-```bash
-curl "http://localhost:3515/api/v1/sms/messages/chat/a1b2c3d4e5f6g7h8?page=1&limit=50"
+# Mensajes a un número específico
+curl "http://localhost:3515/api/v1/sms/messages?numero=59163354864"
 ```
 
 ---

@@ -1,12 +1,12 @@
 export enum MessageType {
-  CODE = 1, // SMS con código
-  INFO = 2, // Mensaje informativo
+  CODE = 'Codigo', // SMS con código
+  INFO = 'Informativo', // Mensaje informativo
 }
 
 export enum MessageStatus {
-  PENDING = 0, // Pendiente de envío
-  SENT = 1, // Enviado correctamente
-  FAILED = 2, // Falló el envío
+  PENDING = 'Pendiente', // Pendiente de envío
+  SENT = 'Enviado', // Enviado correctamente
+  FAILED = 'Fallido', // Falló el envío
 }
 
 export const MESSAGE_TYPE_LABELS: Record<MessageType, string> = {

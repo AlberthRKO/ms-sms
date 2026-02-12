@@ -7,186 +7,221 @@ import {
   Length,
   Matches,
   MaxLength,
-  Min,
   ValidateNested,
   IsEnum,
+  IsBoolean,
   IsMongoId,
+  Min,
 } from 'class-validator';
 import {
   smsIsStringM,
   smsMaxLength,
-  smsMinInt,
   smsNotEmptyM,
+  smsMinInt,
 } from 'fiscalia_bo-nest-helpers/dist/custom-validators/validator.sms';
 import { DtoPipePlainToClassOptions } from 'fiscalia_bo-nest-helpers/dist/decorators/dto.decorator';
 import { PHONE_REGEX } from 'fiscalia_bo-nest-helpers/dist/helpers';
-import { ENVIRONMENT_ENUM } from 'fiscalia_bo-nest-helpers/dist/dto';
 import { MessageType, MessageStatus } from './message-status.enum';
 
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* DTOs para información de Origen                                                                                    */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
 @DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
-class UserSend {
+class UsuarioOrigenDTO {
   @Expose()
-  @IsNotEmpty({ message: (v) => smsNotEmptyM(v) })
-  @ApiProperty({ description: 'ci del usuario' })
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'CI del usuario') })
+  @IsString({ message: (v) => smsIsStringM(v, 'CI del usuario') })
+  @ApiProperty({ description: 'CI del usuario', example: '14258827' })
   ci: string;
 
   @Expose()
-  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'nombre de usuario') })
-  @IsString({ message: (v) => smsIsStringM(v, 'nombre de usuario') })
-  @ApiProperty({ description: 'nombreCompleto debe ser un objeto' })
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'nombre completo del usuario') })
+  @IsString({ message: (v) => smsIsStringM(v, 'nombre completo del usuario') })
+  @ApiProperty({
+    description: 'Nombre completo del usuario',
+    example: 'ALBERTO ORLANDO PAREDES MAMANI',
+  })
   nombreCompleto: string;
-
-  /* ------------------------------------------------- optional fields ------------------------------------------------ */
-
-  @Expose()
-  @Min(0, { message: smsMinInt })
-  @IsOptional()
-  @ApiProperty({ description: 'msPersonaId debe ser un numero', required: false })
-  msPersonaId?: number;
-
-  @Expose()
-  @IsOptional()
-  @ApiProperty({ description: 'funcionarioId debe ser un numero', required: false })
-  funcionarioId?: number;
-
-  @Expose()
-  @IsOptional()
-  @ApiProperty({ description: 'institucionId debe ser un numero', required: false })
-  institucionId?: number;
-
-  @Expose()
-  @IsOptional()
-  @ApiProperty({ description: 'oficinaId debe ser un numero', required: false })
-  oficinaId?: number;
 }
 
 @DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
-export class SendMessageTextDTO {
+class OrigenDTO {
   @Expose()
-  @IsEnum(ENVIRONMENT_ENUM, {
-    message: 'El campo modo de servicio debe ser uno de los siguientes: prod, dev, test, stage',
-  })
-  @IsOptional()
-  @ApiProperty({ enum: ENVIRONMENT_ENUM, default: ENVIRONMENT_ENUM.PROD, required: false })
-  mode?: ENVIRONMENT_ENUM;
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'aplicación') })
+  @IsString({ message: (v) => smsIsStringM(v, 'aplicación') })
+  @ApiProperty({ description: 'Aplicación de origen', example: 'JL-Penal' })
+  aplicacion: string;
 
   @Expose()
-  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'número de celular') })
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'módulo') })
+  @IsString({ message: (v) => smsIsStringM(v, 'módulo') })
+  @ApiProperty({ description: 'Módulo de origen', example: 'Login' })
+  modulo: string;
+
+  @Expose()
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'número de origen') })
   @Matches(PHONE_REGEX, {
-    message: 'El campo phone debe contener números telefonicos, ej: +591 78945612 o 59178945612',
+    message: 'El número de origen debe ser válido, ej: +59163354864',
   })
   @Length(8, 15, {
-    message: 'El campo phone debe contener exactamente minimo 8 dígitos y maximo 15.',
+    message: 'El número de origen debe contener entre 8 y 15 dígitos.',
   })
-  @IsString({ message: (v) => smsIsStringM(v, 'número de celular') })
-  @ApiProperty({
-    description:
-      'numero de celular habilitado en message, incluido codigo de pais, ejemplo: 59178945612, +59178945612',
-    example: '+59178945612',
+  @IsString({ message: (v) => smsIsStringM(v, 'número de origen') })
+  @ApiProperty({ description: 'Número de origen desde donde se envía', example: '+59163354864' })
+  numero: string;
+
+  @Expose()
+  @Type(() => UsuarioOrigenDTO)
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'usuario') })
+  @ValidateNested()
+  @ApiProperty({ type: UsuarioOrigenDTO, description: 'Información del usuario origen' })
+  usuario: UsuarioOrigenDTO;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* DTOs para información de Destino                                                                                   */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+@DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
+class DestinoDTO {
+  @Expose()
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'número de destino') })
+  @Matches(PHONE_REGEX, {
+    message: 'El número de destino debe ser válido, ej: +59163354864',
   })
-  phone: string;
+  @Length(8, 15, {
+    message: 'El número de destino debe contener entre 8 y 15 dígitos.',
+  })
+  @IsString({ message: (v) => smsIsStringM(v, 'número de destino') })
+  @ApiProperty({ description: 'Número de destino que recibirá el SMS', example: '+59163354864' })
+  numero: string;
 
   @Expose()
   @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'mensaje') })
   @IsString({ message: (v) => smsIsStringM(v, 'mensaje') })
   @MaxLength(4096, { message: (v) => smsMaxLength(v, 'mensaje') })
   @ApiProperty({
-    type: String,
-    description: 'message debe ser cadena de texto',
+    description: 'Contenido del mensaje SMS',
+    example: 'Codigo ROMA: 693484',
   })
-  message: string;
+  mensaje: string;
 
   @Expose()
-  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'aplicacion') })
-  @IsString({ message: (v) => smsIsStringM(v, 'aplicacion') })
-  @ApiProperty({ type: String, description: 'app debe ser cadena de texto' })
-  app: string;
-
-  @Expose()
-  @Type(() => UserSend)
-  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'usuario') })
-  @ValidateNested()
-  @ApiProperty({ type: UserSend, description: 'user debe ser un objeto' })
-  user: UserSend;
+  @IsBoolean({ message: 'El campo fichero debe ser un valor booleano (true o false)' })
+  @IsOptional()
+  @ApiProperty({
+    description: 'Indica si incluye fichero adjunto',
+    default: false,
+    required: false,
+  })
+  fichero?: boolean = false;
 
   @Expose()
   @IsEnum(MessageType, {
-    message: 'El campo messageType debe ser 1 (SMS con código) o 2 (mensaje informativo)',
+    message: 'El campo tipo debe ser "Codigo" o "Informativo"',
   })
   @ApiProperty({
     enum: MessageType,
-    description: 'Tipo de mensaje: 1=SMS con código, 2=mensaje informativo',
+    description: 'Tipo de mensaje: "Codigo" o "Informativo"',
     example: MessageType.CODE,
   })
-  messageType: MessageType;
+  tipo: MessageType;
 }
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* DTO Principal: Crear Mensaje                                                                                       */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+@DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
+export class SendMessageTextDTO {
+  @Expose()
+  @Type(() => OrigenDTO)
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'origen') })
+  @ValidateNested()
+  @ApiProperty({ type: OrigenDTO, description: 'Información de origen del mensaje' })
+  origen: OrigenDTO;
+
+  @Expose()
+  @Type(() => DestinoDTO)
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'destino') })
+  @ValidateNested()
+  @ApiProperty({ type: DestinoDTO, description: 'Información de destino del mensaje' })
+  destino: DestinoDTO;
+}
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* DTO: Actualizar Estado del Mensaje                                                                                */
+/* ------------------------------------------------------------------------------------------------------------------ */
 
 @DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
 export class UpdateMessageStatusDTO {
   @Expose()
   @IsMongoId({ message: 'El campo messageId debe ser un ObjectId válido' })
-  @ApiProperty({ description: 'ID del mensaje', example: '67a42c2a88453f4c8d5b9d0e' })
+  @ApiProperty({ description: 'ID del mensaje', example: '698c7c7c3f52a806f3dea18d' })
   messageId: string;
 
   @Expose()
   @IsEnum(MessageStatus, {
-    message: 'El campo status debe ser 0 (pendiente), 1 (enviado) o 2 (fallido)',
+    message: 'El campo estado debe ser "Pendiente", "Enviado" o "Fallido"',
   })
   @ApiProperty({
     enum: MessageStatus,
-    description: 'Nuevo estado del mensaje: 0=pendiente, 1=enviado, 2=fallido',
+    description: 'Nuevo estado del mensaje: "Pendiente", "Enviado" o "Fallido"',
     example: MessageStatus.SENT,
   })
-  status: MessageStatus;
+  estado: MessageStatus;
 }
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* DTO: Listar Mensajes con Filtros                                                                                  */
+/* ------------------------------------------------------------------------------------------------------------------ */
 
 @DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
 export class ListMessagesQueryDTO {
   @Expose()
   @IsEnum(MessageType, {
-    message: 'El campo messageType debe ser 1 (SMS con código) o 2 (mensaje informativo)',
+    message: 'El campo tipo debe ser "Codigo" o "Informativo"',
   })
   @IsOptional()
-  @Transform(({ value }) => (value ? Number(value) : value))
   @ApiProperty({
     enum: MessageType,
     required: false,
-    description: 'Filtrar por tipo de mensaje: 1=SMS con código, 2=mensaje informativo',
+    description: 'Filtrar por tipo de mensaje: "Codigo" o "Informativo"',
   })
-  messageType?: MessageType;
+  tipo?: MessageType;
 
   @Expose()
   @IsEnum(MessageStatus, {
-    message: 'El campo status debe ser 0 (pendiente), 1 (enviado) o 2 (fallido)',
+    message: 'El campo estado debe ser "Pendiente", "Enviado" o "Fallido"',
   })
   @IsOptional()
-  @Transform(({ value }) => (value ? Number(value) : value))
   @ApiProperty({
     enum: MessageStatus,
     required: false,
-    description: 'Filtrar por estado: 0=pendiente, 1=enviado, 2=fallido',
+    description: 'Filtrar por estado: "Pendiente", "Enviado" o "Fallido"',
   })
-  status?: MessageStatus;
+  estado?: MessageStatus;
 
   @Expose()
   @IsOptional()
   @IsString()
   @ApiProperty({
     required: false,
-    description: 'Filtrar por número de teléfono',
-    example: '+59178945612',
+    description: 'Filtrar por número de destino',
+    example: '+59163354864',
   })
-  phone?: string;
+  numero?: string;
 
   @Expose()
   @IsOptional()
   @IsString()
   @ApiProperty({
     required: false,
-    description: 'Filtrar por aplicación',
-    example: 'UNIA',
+    description: 'Filtrar por aplicación de origen',
+    example: 'JL-Penal',
   })
-  app?: string;
+  aplicacion?: string;
 
   @Expose()
   @Transform(({ value }) => (value ? Number(value) : 1))
@@ -202,7 +237,7 @@ export class ListMessagesQueryDTO {
 
   @Expose()
   @Transform(({ value }) => (value ? Number(value) : 10))
-  @Min(1, { message: 'El límite debe ser mayor o igual a 1' })
+  @Min(1, { message: smsMinInt })
   @IsOptional()
   @ApiProperty({
     required: false,
