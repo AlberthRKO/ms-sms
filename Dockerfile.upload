@@ -1,0 +1,23 @@
+###################
+# # BUILD FOR LOCAL DEVELOPMENT
+###################
+
+FROM harbor.mp.gob.bo/ms-sms-v2/build:latest AS build
+
+WORKDIR /usr/src/app
+
+COPY . .
+
+FROM harbor.mp.gob.bo/registro/dockers/node:25.6.0-alpine AS deployment
+
+WORKDIR /usr/src/app
+
+RUN apk add --no-cache tzdata
+ENV TZ America/La_Paz
+
+COPY --chown=node:node --from=build /usr/src/app/dist ./dist
+COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
+COPY --chown=node:node --from=build /usr/src/app/package.json ./
+
+USER node
+CMD [ "node", "dist/main.js" ]
