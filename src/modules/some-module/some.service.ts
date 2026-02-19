@@ -9,7 +9,7 @@ import {
   UpdateMessageStatusDTO,
   ListMessagesQueryDTO,
 } from './dto/some.input.dto';
-import { MessageStatus } from './dto/message-status.enum';
+import { MessageStatus, MessageType } from './dto/message-status.enum';
 import { SomeGateway } from './some.gateway';
 
 @Injectable()
@@ -51,16 +51,21 @@ export class SomeService {
       estado: MessageStatus.PENDING, // Siempre inicia como "Pendiente"
     });
 
+    // Convertir a objeto plano para evitar metadatos de Mongoose
+    const plainMessage = createdMessage.toObject();
+
     const payload = {
-      _id: createdMessage._id.toString(),
-      origen: createdMessage.origen,
+      _id: plainMessage._id.toString(),
+      origen: plainMessage.origen,
       destino: {
-        ...createdMessage.destino,
-        tipo: createdMessage.destino.tipo as any,
+        numero: plainMessage.destino.numero,
+        mensaje: plainMessage.destino.mensaje,
+        fichero: plainMessage.destino.fichero,
+        tipo: plainMessage.destino.tipo as MessageType,
       },
-      estado: createdMessage.estado as any,
-      createdAt: createdMessage.createdAt,
-      updatedAt: createdMessage.updatedAt,
+      estado: plainMessage.estado as MessageStatus,
+      createdAt: plainMessage.createdAt,
+      updatedAt: plainMessage.updatedAt,
     };
 
     // SOLO emitir evento de nuevo mensaje, NO emitir evento de estado
@@ -91,16 +96,21 @@ export class SomeService {
       throw new NotFoundException('Mensaje no encontrado');
     }
 
+    // Convertir a objeto plano para evitar metadatos de Mongoose
+    const plainMessage = updatedMessage.toObject();
+
     const payload = {
-      _id: updatedMessage._id.toString(),
-      origen: updatedMessage.origen,
+      _id: plainMessage._id.toString(),
+      origen: plainMessage.origen,
       destino: {
-        ...updatedMessage.destino,
-        tipo: updatedMessage.destino.tipo as any,
+        numero: plainMessage.destino.numero,
+        mensaje: plainMessage.destino.mensaje,
+        fichero: plainMessage.destino.fichero,
+        tipo: plainMessage.destino.tipo as MessageType,
       },
-      estado: updatedMessage.estado as any,
-      createdAt: updatedMessage.createdAt,
-      updatedAt: updatedMessage.updatedAt,
+      estado: plainMessage.estado as MessageStatus,
+      createdAt: plainMessage.createdAt,
+      updatedAt: plainMessage.updatedAt,
     };
 
     // Emitir evento de actualización de estado
@@ -133,15 +143,19 @@ export class SomeService {
     if (tipo !== undefined) filter['destino.tipo'] = tipo;
     if (estado !== undefined) filter.estado = estado;
     if (numero) filter['destino.numero'] = { $regex: this.escapeRegex(numero), $options: 'i' };
-    if (aplicacion) filter['origen.aplicacion'] = { $regex: this.escapeRegex(aplicacion), $options: 'i' };
+    if (aplicacion)
+      filter['origen.aplicacion'] = { $regex: this.escapeRegex(aplicacion), $options: 'i' };
 
     const skip = (page - 1) * limit;
 
     // Obtener mensajes y total de registros
-    const [messages, total] = await Promise.all([
-      this.messageModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean().exec(),
-      this.messageModel.countDocuments(filter),
-    ]);
+    const messages = await this.messageModel
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .exec();
 
     const formattedMessages = messages
       .filter((msg: any) => msg.origen && msg.destino) // Filtrar solo mensajes con estructura válida
@@ -149,10 +163,12 @@ export class SomeService {
         _id: msg._id.toString(),
         origen: msg.origen,
         destino: {
-          ...msg.destino,
-          tipo: msg.destino.tipo as any,
+          numero: msg.destino.numero,
+          mensaje: msg.destino.mensaje,
+          fichero: msg.destino.fichero,
+          tipo: msg.destino.tipo as MessageType,
         },
-        estado: msg.estado as any,
+        estado: msg.estado as MessageStatus,
         createdAt: msg.createdAt,
         updatedAt: msg.updatedAt,
       }));
