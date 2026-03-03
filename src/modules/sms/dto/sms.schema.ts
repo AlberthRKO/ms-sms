@@ -56,6 +56,9 @@ export class Message {
   })
   estado: string; // Estado: "Pendiente", "Enviado" o "Fallido"
 
+  @Prop({ type: String, required: true, enum: ['dev', 'prod', 'stage'], index: -1, default: 'dev' })
+  entorno: string;
+
   // Agregar estas propiedades manualmente para que TypeScript las reconozca
   createdAt?: Date;
   updatedAt?: Date;

@@ -30,14 +30,21 @@ export class SmsService {
    * @returns Datos del mensaje creado
    */
   async sendMessageByPhone(inputDto: SendMessageTextDTO): Promise<ResponseDTO<any>> {
-    const { origen, destino } = inputDto;
+    const { origen, destino, entorno } = inputDto;
 
     const quotaValidation = await this.validateMonthlyQuotaOrThrow();
 
+    const esProd = String(entorno).toLowerCase() === 'prod';
+    const mensajeTexto = esProd ? destino.mensaje : `[PRUEBA] ${destino.mensaje}`;
+
     // Crear el mensaje con estado inicial PENDIENTE
     const createdMessage = await this.messageModel.create({
+      entorno,
       origen,
-      destino,
+      destino: {
+        ...destino,
+        mensaje: mensajeTexto,
+      },
       estado: MessageStatus.PENDING, // Siempre inicia como "Pendiente"
     });
 
@@ -54,6 +61,7 @@ export class SmsService {
         tipo: plainMessage.destino.tipo as MessageType,
       },
       estado: plainMessage.estado as MessageStatus,
+      entorno: plainMessage.entorno,
       createdAt: plainMessage.createdAt,
       updatedAt: plainMessage.updatedAt,
     };
@@ -61,9 +69,6 @@ export class SmsService {
     // SOLO emitir evento de nuevo mensaje, NO emitir evento de estado
     this.someGateway.emitSendMessage(payload);
 
-    // this.logger.log(
-    //   `Mensaje creado - ID: ${payload._id}, Tipo: ${destino.tipo}, App: ${origen.aplicacion}, Destino: ${destino.numero}`,
-    // );
     if (quotaValidation.monthlyQuota !== null && quotaValidation.messagesThisMonth !== null) {
       const currentMonthlyCount = quotaValidation.messagesThisMonth + 1;
       this.logger.log(
@@ -105,6 +110,7 @@ export class SmsService {
         tipo: plainMessage.destino.tipo as MessageType,
       },
       estado: plainMessage.estado as MessageStatus,
+      entorno: plainMessage.entorno,
       createdAt: plainMessage.createdAt,
       updatedAt: plainMessage.updatedAt,
     };
@@ -190,7 +196,7 @@ export class SmsService {
    * @returns Lista de mensajes con paginación
    */
   async listMessages(queryDto: ListMessagesQueryDTO): Promise<ResponseDTO<any>> {
-    const { tipo, estado, numero, aplicacion, page = 1, limit = 10 } = queryDto;
+    const { tipo, estado, numero, aplicacion, entorno, page = 1, limit = 10 } = queryDto;
 
     // Construir filtros dinámicamente
     const filter: any = {};
@@ -199,6 +205,7 @@ export class SmsService {
     if (numero) filter['destino.numero'] = { $regex: this.escapeRegex(numero), $options: 'i' };
     if (aplicacion)
       filter['origen.aplicacion'] = { $regex: this.escapeRegex(aplicacion), $options: 'i' };
+    if (entorno !== undefined) filter.entorno = entorno;
 
     const skip = (page - 1) * limit;
 
@@ -223,6 +230,7 @@ export class SmsService {
           tipo: msg.destino.tipo as MessageType,
         },
         estado: msg.estado as MessageStatus,
+        entorno: msg.entorno,
         createdAt: msg.createdAt,
         updatedAt: msg.updatedAt,
       }));

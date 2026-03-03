@@ -21,7 +21,7 @@ import {
 } from 'fiscalia_bo-nest-helpers/dist/custom-validators/validator.sms';
 import { DtoPipePlainToClassOptions } from 'fiscalia_bo-nest-helpers/dist/decorators/dto.decorator';
 import { PHONE_REGEX } from 'fiscalia_bo-nest-helpers/dist/helpers';
-import { MessageType, MessageStatus } from './message-status.enum';
+import { MessageType, MessageStatus, Entorno } from './message-status.enum';
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* DTOs para información de Origen                                                                                    */
@@ -140,6 +140,19 @@ class DestinoDTO {
 @DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
 export class SendMessageTextDTO {
   @Expose()
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'entorno') })
+  @IsEnum(Entorno, {
+    message: 'El campo entorno debe ser "dev", "prod", "staging" o "test"',
+  })
+  @IsString({ message: (v) => smsIsStringM(v, 'entorno') })
+  @ApiProperty({
+    description: 'Entorno desde el que se envía (indicado por la aplicación)',
+    example: 'dev',
+    enum: Entorno,
+  })
+  entorno: Entorno;
+
+  @Expose()
   @Type(() => OrigenDTO)
   @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'origen') })
   @ValidateNested()
@@ -226,6 +239,19 @@ export class ListMessagesQueryDTO {
     example: 'JL-Penal',
   })
   aplicacion?: string;
+
+  @Expose()
+  @IsOptional()
+  @IsEnum(Entorno, {
+    message: 'El campo entorno debe ser "dev", "prod", "staging" o "test"',
+  })
+  @ApiProperty({
+    required: false,
+    description: 'Filtrar por entorno',
+    example: 'prod',
+    enum: Entorno,
+  })
+  entorno?: Entorno;
 
   @Expose()
   @Transform(({ value }) => (value ? Number(value) : 1))
