@@ -35,8 +35,7 @@ export class SmsService {
     const quotaValidation = await this.validateMonthlyQuotaOrThrow();
 
     const esProd = String(entorno).toLowerCase() === 'prod';
-    const mensajeTexto =
-      esProd ? destino.mensaje : `[PRUEBA] ${destino.mensaje}`;
+    const mensajeTexto = esProd ? destino.mensaje : `[PRUEBA] ${destino.mensaje}`;
 
     // Crear el mensaje con estado inicial PENDIENTE
     const createdMessage = await this.messageModel.create({
