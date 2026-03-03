@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { SomeController } from './some.controller';
-import { SomeService } from './some.service';
+import { SmsController } from './sms.controller';
+import { SmsService } from './sms.service';
 import { HttpModule } from '@nestjs/axios';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Message, MessageSchema } from './dto/some.schema';
-import { SomeGateway } from './some.gateway';
+import { Message, MessageSchema } from './dto/sms.schema';
+import { SmsGateway } from './sms.gateway';
 
 @Module({
   imports: [
@@ -16,8 +16,8 @@ import { SomeGateway } from './some.gateway';
       maxRedirects: 5,
     }),
   ],
-  controllers: [SomeController],
-  providers: [SomeService, SomeGateway],
-  exports: [SomeService],
+  controllers: [SmsController],
+  providers: [SmsService, SmsGateway],
+  exports: [SmsService],
 })
-export class SomeModule {}
+export class SmsModule {}

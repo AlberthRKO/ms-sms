@@ -1,25 +1,26 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Message, MessageDocument } from './dto/some.schema';
+import { Message, MessageDocument } from './dto/sms.schema';
 import { dataResponseSuccess, ResponseDTO } from 'fiscalia_bo-nest-helpers/dist/dto';
 import {
   SendMessageTextDTO,
   UpdateMessageStatusDTO,
   ListMessagesQueryDTO,
-} from './dto/some.input.dto';
+} from './dto/sms.input.dto';
 import { MessageStatus, MessageType } from './dto/message-status.enum';
-import { SomeGateway } from './some.gateway';
+import { SmsGateway } from './sms.gateway';
+import { ValidatorException } from 'src/common/filters/global-exception.filter';
 
 @Injectable()
-export class SomeService {
-  private readonly logger = new Logger(SomeService.name);
+export class SmsService {
+  private readonly logger = new Logger(SmsService.name);
 
   constructor(
     @InjectModel(Message.name) private readonly messageModel: Model<MessageDocument>,
     private readonly configService: ConfigService,
-    private readonly someGateway: SomeGateway,
+    private readonly someGateway: SmsGateway,
   ) {}
 
   /**
@@ -31,23 +32,12 @@ export class SomeService {
   async sendMessageByPhone(inputDto: SendMessageTextDTO): Promise<ResponseDTO<any>> {
     const { origen, destino } = inputDto;
 
+    const quotaValidation = await this.validateMonthlyQuotaOrThrow();
+
     // Crear el mensaje con estado inicial PENDIENTE
     const createdMessage = await this.messageModel.create({
-      origen: {
-        aplicacion: origen.aplicacion,
-        modulo: origen.modulo,
-        numero: origen.numero,
-        usuario: {
-          ci: origen.usuario.ci,
-          nombreCompleto: origen.usuario.nombreCompleto,
-        },
-      },
-      destino: {
-        numero: destino.numero,
-        mensaje: destino.mensaje,
-        fichero: destino.fichero || false,
-        tipo: destino.tipo,
-      },
+      origen,
+      destino,
       estado: MessageStatus.PENDING, // Siempre inicia como "Pendiente"
     });
 
@@ -71,9 +61,15 @@ export class SomeService {
     // SOLO emitir evento de nuevo mensaje, NO emitir evento de estado
     this.someGateway.emitSendMessage(payload);
 
-    this.logger.log(
-      `Mensaje creado - ID: ${payload._id}, Tipo: ${destino.tipo}, App: ${origen.aplicacion}, Destino: ${destino.numero}`,
-    );
+    // this.logger.log(
+    //   `Mensaje creado - ID: ${payload._id}, Tipo: ${destino.tipo}, App: ${origen.aplicacion}, Destino: ${destino.numero}`,
+    // );
+    if (quotaValidation.monthlyQuota !== null && quotaValidation.messagesThisMonth !== null) {
+      const currentMonthlyCount = quotaValidation.messagesThisMonth + 1;
+      this.logger.log(
+        `Cuota mensual SMS: ${currentMonthlyCount}/${quotaValidation.monthlyQuota} | ID: ${payload._id} | App: ${origen.aplicacion} | Destino: ${destino.numero}`,
+      );
+    }
 
     return dataResponseSuccess({ data: payload }, { message: 'Mensaje creado exitosamente' });
   }
@@ -128,6 +124,64 @@ export class SomeService {
    */
   private escapeRegex(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private getMonthlyQuota(): number | null {
+    const rawQuota = this.configService.get<string>('ENV_SMS_MONTHLY_QUOTA');
+
+    if (!rawQuota) {
+      return null;
+    }
+
+    const parsedQuota = Number(rawQuota);
+    if (!Number.isInteger(parsedQuota) || parsedQuota < 0) {
+      this.logger.warn(
+        'La variable ENV_SMS_MONTHLY_QUOTA es inválida. Se ignorará el límite mensual.',
+      );
+      return null;
+    }
+
+    return parsedQuota;
+  }
+
+  private getCurrentMonthRange(): { startOfMonth: Date; startOfNextMonth: Date } {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+
+    return { startOfMonth, startOfNextMonth };
+  }
+
+  private async countMessagesThisMonth(): Promise<number> {
+    const { startOfMonth, startOfNextMonth } = this.getCurrentMonthRange();
+
+    return this.messageModel.countDocuments({
+      createdAt: { $gte: startOfMonth, $lt: startOfNextMonth },
+    });
+  }
+
+  private async validateMonthlyQuotaOrThrow(): Promise<{
+    monthlyQuota: number | null;
+    messagesThisMonth: number | null;
+  }> {
+    const monthlyQuota = this.getMonthlyQuota();
+
+    if (monthlyQuota === null) {
+      return { monthlyQuota: null, messagesThisMonth: null };
+    }
+
+    const messagesThisMonth = await this.countMessagesThisMonth();
+    if (messagesThisMonth >= monthlyQuota) {
+      this.logger.warn(
+        `Cuota mensual de SMS alcanzada (${messagesThisMonth}/${monthlyQuota}). Se bloquea nuevo envío.`,
+      );
+      throw new ValidatorException(
+        `Se alcanzó la cuota mensual de SMS (${monthlyQuota}). No es posible enviar más mensajes este mes.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    return { monthlyQuota, messagesThisMonth };
   }
 
   /**

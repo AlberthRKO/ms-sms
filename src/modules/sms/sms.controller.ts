@@ -1,19 +1,19 @@
 import { Controller, Post, Body, Get, Query } from '@nestjs/common';
-import { SomeService } from './some.service';
+import { SmsService } from './sms.service';
 import {
   SendMessageTextDTO,
   UpdateMessageStatusDTO,
   ListMessagesQueryDTO,
-} from './dto/some.input.dto';
+} from './dto/sms.input.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { VersionDescription } from 'fiscalia_bo-nest-helpers/dist/decorators/controller.decorator';
 import { ResponseDTO } from 'fiscalia_bo-nest-helpers/dist/dto/response.dto';
-import { Messages } from './dto/some.interface';
+import { Messages } from './dto/sms.interface';
 
 @ApiTags('SMS SERVICES')
 @Controller('sms')
-export class SomeController {
-  constructor(private readonly someService: SomeService) {}
+export class SmsController {
+  constructor(private readonly someService: SmsService) {}
 
   @Post('send-message')
   @VersionDescription('1', 'Crear y enviar mensaje SMS')

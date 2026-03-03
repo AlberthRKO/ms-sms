@@ -73,10 +73,14 @@ class OrigenDTO {
 
   @Expose()
   @Type(() => UsuarioOrigenDTO)
-  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'usuario') })
-  @ValidateNested()
-  @ApiProperty({ type: UsuarioOrigenDTO, description: 'Información del usuario origen' })
-  usuario: UsuarioOrigenDTO;
+  @IsOptional()
+  // @ValidateNested()
+  @ApiProperty({
+    type: UsuarioOrigenDTO,
+    description: 'Información del usuario origen',
+    required: false,
+  })
+  usuario?: UsuarioOrigenDTO;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

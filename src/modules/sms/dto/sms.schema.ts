@@ -17,8 +17,8 @@ export class Origen {
   @Prop({ type: String, required: true })
   numero: string; // Número de origen desde donde se envía
 
-  @Prop({ type: Object, required: true })
-  usuario: {
+  @Prop({ type: Object, required: false })
+  usuario?: {
     ci: string;
     nombreCompleto: string;
   };
@@ -48,7 +48,12 @@ export class Message {
   @Prop({ type: Destino, required: true })
   destino: Destino;
 
-  @Prop({ type: String, default: 'Pendiente', enum: ['Pendiente', 'Enviado', 'Fallido'], index: -1 })
+  @Prop({
+    type: String,
+    default: 'Pendiente',
+    enum: ['Pendiente', 'Enviado', 'Fallido'],
+    index: -1,
+  })
   estado: string; // Estado: "Pendiente", "Enviado" o "Fallido"
 
   // Agregar estas propiedades manualmente para que TypeScript las reconozca

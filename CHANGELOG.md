@@ -1,3 +1,37 @@
+# CAMBIOS Y ACTUALIZACIONES
+
+## 0.1.0 (2026-03-03)
+
+### 🚀 Features
+
+* despliegue en dev ([a1faf94](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/a1faf9465606354b03d736112e105cc2ae1d3a63))
+* implementa cuota mensual de sms controlados por variable de entorno  jira/MS-18 ([6da51aa](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/6da51aaa7315c53a84d03b0a714f522599b28d27))
+* mejora cuota de validacion de SMS para retornar informacion en logs  jira/MS-18 ([b12a7c9](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/b12a7c9ecd01ac9f0c2ba3aa4a3f58022644e4fd))
+
+### 🐞 Bug Fixes
+
+* aumento de corepack ([c6f4273](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/c6f42732891d7ec9c206dc8a5dd2b9115810e70e))
+* bajando node a 22.12 ([98f0d6d](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/98f0d6d2a42444e2c8b0402803491b4c9b902b3d))
+* cambio de docker sin vulnerabilidad ([d745b57](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/d745b57e3a0b3cb45ba41929b7d0dad216b0b0f5))
+* cambio de node a 25.6.0 ([47f5255](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/47f5255ee86d1bb2e1f7fc44ee31e9b2d38032b9))
+* cambio de node en upload ([a46596d](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/a46596d48dbac8c4a9f01305bc489ec997a9045f))
+* correcion de ramas en CICD ([7eb25dd](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/7eb25dda5ddeb93944452d1dafeb0edd404b5670))
+* disminuyendo node a 24.12.0 ([826365a](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/826365ab81fbdec19283001f911acb7e9b754b25))
+* eliminando package manager ([17d1224](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/17d1224c57232b81dd9302a0856b62cf090ae91d))
+* error en ruta main ([aacd2de](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/aacd2debf0bed46f9df16e40b727cfe0ea3edb2d))
+* error en ruta main ([6eb1174](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/6eb11749357ced1afd112ea81bb055e7a6edbbe0))
+* usando yarn en vez de npm ([e1fad99](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/e1fad99b87232ddac3c3ab615f641b6baf227289))
+
+### ♻️ Code Refactoring
+
+* cambia nombres de clases y archivos mejorando legibilidad  jira/MS-17 ([6878742](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/687874263093fe4b65fa233633ab44901d1aec8d))
+* simplifica la creacion de sms y actualiza como opcional la propiedad usuario de origen  jira/MS-18 ([375e909](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/375e9096680500da6e0a52b5314a369f1c4cea12))
+
+### 📦 Maintenance
+
+* proyecto base con fastify ([5f2f457](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/5f2f45718c9d1ea3553ac0d39bd2895f45defc81))
+* suprime logs de gateway ([9c10d0f](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/9c10d0fb557a2779ba725af836af23ff2e5e27b2))
+
 # Changelog
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
