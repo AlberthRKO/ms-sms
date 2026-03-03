@@ -11,7 +11,7 @@ import { GlobalModule } from './modules/global/global.module';
 import { AutoTasksModule } from './modules/auto/auto.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MsLogsModule } from 'fiscalia_bo-nest-helpers/dist/modules/ms-logs';
-import { SomeModule } from './modules/some-module/some.module';
+import { SmsModule } from './modules/sms/sms.module';
 
 @Module({
   imports: [
@@ -26,7 +26,7 @@ import { SomeModule } from './modules/some-module/some.module';
     GlobalModule,
     AutoTasksModule,
     /* ------------------------------------------------------------------------------------------------------------------ */
-    SomeModule,
+    SmsModule,
     /* --------------------------------------------------- miservices --------------------------------------------------- */
     MsLogsModule.register({
       global: true,

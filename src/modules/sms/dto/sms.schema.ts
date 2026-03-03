@@ -48,7 +48,12 @@ export class Message {
   @Prop({ type: Destino, required: true })
   destino: Destino;
 
-  @Prop({ type: String, default: 'Pendiente', enum: ['Pendiente', 'Enviado', 'Fallido'], index: -1 })
+  @Prop({
+    type: String,
+    default: 'Pendiente',
+    enum: ['Pendiente', 'Enviado', 'Fallido'],
+    index: -1,
+  })
   estado: string; // Estado: "Pendiente", "Enviado" o "Fallido"
 
   // Agregar estas propiedades manualmente para que TypeScript las reconozca

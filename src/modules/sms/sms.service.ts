@@ -2,24 +2,24 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Message, MessageDocument } from './dto/some.schema';
+import { Message, MessageDocument } from './dto/sms.schema';
 import { dataResponseSuccess, ResponseDTO } from 'fiscalia_bo-nest-helpers/dist/dto';
 import {
   SendMessageTextDTO,
   UpdateMessageStatusDTO,
   ListMessagesQueryDTO,
-} from './dto/some.input.dto';
+} from './dto/sms.input.dto';
 import { MessageStatus, MessageType } from './dto/message-status.enum';
-import { SomeGateway } from './some.gateway';
+import { SmsGateway } from './sms.gateway';
 
 @Injectable()
-export class SomeService {
-  private readonly logger = new Logger(SomeService.name);
+export class SmsService {
+  private readonly logger = new Logger(SmsService.name);
 
   constructor(
     @InjectModel(Message.name) private readonly messageModel: Model<MessageDocument>,
     private readonly configService: ConfigService,
-    private readonly someGateway: SomeGateway,
+    private readonly someGateway: SmsGateway,
   ) {}
 
   /**

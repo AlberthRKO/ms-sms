@@ -1,11 +1,11 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { Messages } from './dto/some.interface';
+import { Messages } from './dto/sms.interface';
 import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class SomeGateway {
-  private readonly logger = new Logger(SomeGateway.name);
+export class SmsGateway {
+  private readonly logger = new Logger(SmsGateway.name);
 
   @WebSocketServer()
   server: Server;
