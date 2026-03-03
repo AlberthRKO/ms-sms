@@ -6,16 +6,16 @@ export interface Messages {
     aplicacion: string;
     modulo: string;
     numero: string;
-    usuario?: {
-      ci: string;
-      nombreCompleto: string;
-    };
   };
   destino?: {
     numero: string;
     mensaje: string;
     fichero: boolean;
     tipo: MessageType;
+    usuario?: {
+      ci: string;
+      nombreCompleto: string;
+    };
   };
   estado?: MessageStatus;
   entorno?: string;

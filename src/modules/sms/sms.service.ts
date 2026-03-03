@@ -31,7 +31,6 @@ export class SmsService {
    */
   async sendMessageByPhone(inputDto: SendMessageTextDTO): Promise<ResponseDTO<any>> {
     const { origen, destino, entorno } = inputDto;
-
     const quotaValidation = await this.validateMonthlyQuotaOrThrow();
 
     const esProd = String(entorno).toLowerCase() === 'prod';
@@ -59,6 +58,7 @@ export class SmsService {
         mensaje: plainMessage.destino.mensaje,
         fichero: plainMessage.destino.fichero,
         tipo: plainMessage.destino.tipo as MessageType,
+        ...(plainMessage.destino.usuario && { usuario: plainMessage.destino.usuario }),
       },
       estado: plainMessage.estado as MessageStatus,
       entorno: plainMessage.entorno,
@@ -76,7 +76,10 @@ export class SmsService {
       );
     }
 
-    return dataResponseSuccess({ data: payload }, { message: 'Mensaje creado exitosamente' });
+    return dataResponseSuccess(
+      { data: payload },
+      { message: 'Mensaje SMS registrado correctamente' },
+    );
   }
 
   /**
@@ -108,6 +111,7 @@ export class SmsService {
         mensaje: plainMessage.destino.mensaje,
         fichero: plainMessage.destino.fichero,
         tipo: plainMessage.destino.tipo as MessageType,
+        ...(plainMessage.destino.usuario && { usuario: plainMessage.destino.usuario }),
       },
       estado: plainMessage.estado as MessageStatus,
       entorno: plainMessage.entorno,
@@ -228,6 +232,7 @@ export class SmsService {
           mensaje: msg.destino.mensaje,
           fichero: msg.destino.fichero,
           tipo: msg.destino.tipo as MessageType,
+          ...(msg.destino.usuario && { usuario: msg.destino.usuario }),
         },
         estado: msg.estado as MessageStatus,
         entorno: msg.entorno,

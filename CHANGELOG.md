@@ -1,5 +1,12 @@
 # CAMBIOS Y ACTUALIZACIONES
 
+## [0.1.2](https://git.mp.gob.bo/microservices/ms-sms-v2/compare/v0.1.1...v0.1.2) (2026-03-03)
+
+### 🚀 Features
+
+* actualiza los estados y tipos a minúsculas para mayor consistencia ([fdc2803](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/fdc28036437442392d844c79809f2601404d939d))
+* agrega soporte para la información del usuario en los DTOs de origen y destino, mejorando la trazabilidad de los mensajes SMS ([66b3c77](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/66b3c77884cae1c9d501660b16bfce32de67ed54))
+
 ## [0.1.1](https://git.mp.gob.bo/microservices/ms-sms-v2/compare/v0.1.0...v0.1.1) (2026-03-03)
 
 ### 🚀 Features

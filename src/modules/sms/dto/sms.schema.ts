@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { Entorno, MessageStatus, MessageType } from './message-status.enum';
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 
@@ -16,12 +17,6 @@ export class Origen {
 
   @Prop({ type: String, required: true })
   numero: string; // Número de origen desde donde se envía
-
-  @Prop({ type: Object, required: false })
-  usuario?: {
-    ci: string;
-    nombreCompleto: string;
-  };
 }
 
 // Subdocumento para información de destino
@@ -36,8 +31,14 @@ export class Destino {
   @Prop({ type: Boolean, default: false })
   fichero: boolean; // Indica si incluye fichero adjunto
 
-  @Prop({ type: String, required: true, enum: ['Codigo', 'Informativo'], index: -1 })
+  @Prop({ type: String, required: true, enum: MessageType, index: -1, default: MessageType.CODE })
   tipo: string; // Tipo: "Codigo" o "Informativo"
+
+  @Prop({ type: Object, required: false })
+  usuario?: {
+    ci: string;
+    nombreCompleto: string;
+  };
 }
 
 @Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } })
@@ -50,13 +51,13 @@ export class Message {
 
   @Prop({
     type: String,
-    default: 'Pendiente',
-    enum: ['Pendiente', 'Enviado', 'Fallido'],
+    default: MessageStatus.PENDING,
+    enum: MessageStatus,
     index: -1,
   })
   estado: string; // Estado: "Pendiente", "Enviado" o "Fallido"
 
-  @Prop({ type: String, required: true, enum: ['dev', 'prod', 'stage'], index: -1, default: 'dev' })
+  @Prop({ type: String, required: true, enum: Entorno, index: -1, default: Entorno.DEV })
   entorno: string;
 
   // Agregar estas propiedades manualmente para que TypeScript las reconozca
