@@ -1,12 +1,12 @@
 export enum MessageType {
-  CODE = 'Codigo', // SMS con código
-  INFO = 'Informativo', // Mensaje informativo
+  CODE = 'codigo', // SMS con código
+  INFO = 'informativo', // Mensaje informativo
 }
 
 export enum MessageStatus {
-  PENDING = 'Pendiente', // Pendiente de envío
-  SENT = 'Enviado', // Enviado correctamente
-  FAILED = 'Fallido', // Falló el envío
+  PENDING = 'pendiente', // Pendiente de envío
+  SENT = 'enviado', // Enviado correctamente
+  FAILED = 'fallido', // Falló el envío
 }
 
 /** Entorno desde el que la aplicación cliente envía el SMS (dev, prod, etc.) */
