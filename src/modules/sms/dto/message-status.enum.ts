@@ -9,6 +9,13 @@ export enum MessageStatus {
   FAILED = 'Fallido', // Falló el envío
 }
 
+/** Entorno desde el que la aplicación cliente envía el SMS (dev, prod, etc.) */
+export enum Entorno {
+  DEV = 'dev',
+  PROD = 'prod',
+  STAGE = 'stage',
+}
+
 export const MESSAGE_TYPE_LABELS: Record<MessageType, string> = {
   [MessageType.CODE]: 'SMS con código',
   [MessageType.INFO]: 'Mensaje informativo',

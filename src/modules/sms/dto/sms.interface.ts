@@ -18,6 +18,7 @@ export interface Messages {
     tipo: MessageType;
   };
   estado?: MessageStatus;
+  entorno?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
