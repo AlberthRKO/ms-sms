@@ -31,60 +31,55 @@ export class SmsService {
    */
   async sendMessageByPhone(inputDto: SendMessageTextDTO): Promise<ResponseDTO<any>> {
     const { origen, destino, entorno } = inputDto;
+    const quotaValidation = await this.validateMonthlyQuotaOrThrow();
 
-    try {
-      const quotaValidation = await this.validateMonthlyQuotaOrThrow();
+    const esProd = String(entorno).toLowerCase() === 'prod';
+    const mensajeTexto = esProd ? destino.mensaje : `[PRUEBA] ${destino.mensaje}`;
 
-      const esProd = String(entorno).toLowerCase() === 'prod';
-      const mensajeTexto = esProd ? destino.mensaje : `[PRUEBA] ${destino.mensaje}`;
+    // Crear el mensaje con estado inicial PENDIENTE
+    const createdMessage = await this.messageModel.create({
+      entorno,
+      origen,
+      destino: {
+        ...destino,
+        mensaje: mensajeTexto,
+      },
+      estado: MessageStatus.PENDING, // Siempre inicia como "Pendiente"
+    });
 
-      // Crear el mensaje con estado inicial PENDIENTE
-      const createdMessage = await this.messageModel.create({
-        entorno,
-        origen,
-        destino: {
-          ...destino,
-          mensaje: mensajeTexto,
-        },
-        estado: MessageStatus.PENDING, // Siempre inicia como "Pendiente"
-      });
+    // Convertir a objeto plano para evitar metadatos de Mongoose
+    const plainMessage = createdMessage.toObject();
 
-      // Convertir a objeto plano para evitar metadatos de Mongoose
-      const plainMessage = createdMessage.toObject();
+    const payload = {
+      _id: plainMessage._id.toString(),
+      origen: plainMessage.origen,
+      destino: {
+        numero: plainMessage.destino.numero,
+        mensaje: plainMessage.destino.mensaje,
+        fichero: plainMessage.destino.fichero,
+        tipo: plainMessage.destino.tipo as MessageType,
+        ...(plainMessage.destino.usuario && { usuario: plainMessage.destino.usuario }),
+      },
+      estado: plainMessage.estado as MessageStatus,
+      entorno: plainMessage.entorno,
+      createdAt: plainMessage.createdAt,
+      updatedAt: plainMessage.updatedAt,
+    };
 
-      const payload = {
-        _id: plainMessage._id.toString(),
-        origen: plainMessage.origen,
-        destino: {
-          numero: plainMessage.destino.numero,
-          mensaje: plainMessage.destino.mensaje,
-          fichero: plainMessage.destino.fichero,
-          tipo: plainMessage.destino.tipo as MessageType,
-        },
-        estado: plainMessage.estado as MessageStatus,
-        entorno: plainMessage.entorno,
-        createdAt: plainMessage.createdAt,
-        updatedAt: plainMessage.updatedAt,
-      };
+    // SOLO emitir evento de nuevo mensaje, NO emitir evento de estado
+    this.someGateway.emitSendMessage(payload);
 
-      // SOLO emitir evento de nuevo mensaje, NO emitir evento de estado
-      this.someGateway.emitSendMessage(payload);
-
-      if (quotaValidation.monthlyQuota !== null && quotaValidation.messagesThisMonth !== null) {
-        const currentMonthlyCount = quotaValidation.messagesThisMonth + 1;
-        this.logger.log(
-          `Cuota mensual SMS: ${currentMonthlyCount}/${quotaValidation.monthlyQuota} | ID: ${payload._id} | App: ${origen.aplicacion} | Destino: ${destino.numero}`,
-        );
-      }
-
-      return dataResponseSuccess(
-        { data: payload },
-        { message: 'Mensaje SMS registrado correctamente' },
+    if (quotaValidation.monthlyQuota !== null && quotaValidation.messagesThisMonth !== null) {
+      const currentMonthlyCount = quotaValidation.messagesThisMonth + 1;
+      this.logger.log(
+        `Cuota mensual SMS: ${currentMonthlyCount}/${quotaValidation.monthlyQuota} | ID: ${payload._id} | App: ${origen.aplicacion} | Destino: ${destino.numero}`,
       );
-    } catch (error) {
-      this.logger.error(`Error al enviar mensaje: ${error}`);
-      throw error;
     }
+
+    return dataResponseSuccess(
+      { data: payload },
+      { message: 'Mensaje SMS registrado correctamente' },
+    );
   }
 
   /**
@@ -116,6 +111,7 @@ export class SmsService {
         mensaje: plainMessage.destino.mensaje,
         fichero: plainMessage.destino.fichero,
         tipo: plainMessage.destino.tipo as MessageType,
+        ...(plainMessage.destino.usuario && { usuario: plainMessage.destino.usuario }),
       },
       estado: plainMessage.estado as MessageStatus,
       entorno: plainMessage.entorno,
@@ -236,6 +232,7 @@ export class SmsService {
           mensaje: msg.destino.mensaje,
           fichero: msg.destino.fichero,
           tipo: msg.destino.tipo as MessageType,
+          ...(msg.destino.usuario && { usuario: msg.destino.usuario }),
         },
         estado: msg.estado as MessageStatus,
         entorno: msg.entorno,

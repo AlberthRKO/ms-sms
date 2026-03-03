@@ -28,24 +28,6 @@ import { MessageType, MessageStatus, Entorno } from './message-status.enum';
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 @DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
-class UsuarioOrigenDTO {
-  @Expose()
-  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'CI del usuario') })
-  @IsString({ message: (v) => smsIsStringM(v, 'CI del usuario') })
-  @ApiProperty({ description: 'CI del usuario', example: '14258827' })
-  ci: string;
-
-  @Expose()
-  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'nombre completo del usuario') })
-  @IsString({ message: (v) => smsIsStringM(v, 'nombre completo del usuario') })
-  @ApiProperty({
-    description: 'Nombre completo del usuario',
-    example: 'ALBERTO ORLANDO PAREDES MAMANI',
-  })
-  nombreCompleto: string;
-}
-
-@DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
 class OrigenDTO {
   @Expose()
   @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'aplicación') })
@@ -70,22 +52,29 @@ class OrigenDTO {
   @IsString({ message: (v) => smsIsStringM(v, 'número de origen') })
   @ApiProperty({ description: 'Número de origen desde donde se envía', example: '+59163354864' })
   numero: string;
-
-  @Expose()
-  @Type(() => UsuarioOrigenDTO)
-  @IsOptional()
-  // @ValidateNested()
-  @ApiProperty({
-    type: UsuarioOrigenDTO,
-    description: 'Información del usuario origen',
-    required: false,
-  })
-  usuario?: UsuarioOrigenDTO;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* DTOs para información de Destino                                                                                   */
 /* ------------------------------------------------------------------------------------------------------------------ */
+
+@DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
+class UsuarioDestinoDTO {
+  @Expose()
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'CI del usuario') })
+  @IsString({ message: (v) => smsIsStringM(v, 'CI del usuario') })
+  @ApiProperty({ description: 'CI del usuario destino', example: '14258827' })
+  ci: string;
+
+  @Expose()
+  @IsNotEmpty({ message: (v) => smsNotEmptyM(v, 'nombre completo del usuario') })
+  @IsString({ message: (v) => smsIsStringM(v, 'nombre completo del usuario') })
+  @ApiProperty({
+    description: 'Nombre completo del usuario destino',
+    example: 'ALBERTO ORLANDO PAREDES MAMANI',
+  })
+  nombreCompleto: string;
+}
 
 @DtoPipePlainToClassOptions({ excludeExtraneousValues: true })
 class DestinoDTO {
@@ -131,6 +120,17 @@ class DestinoDTO {
     example: MessageType.CODE,
   })
   tipo: MessageType;
+
+  @Expose()
+  @Type(() => UsuarioDestinoDTO)
+  @IsOptional()
+  @ValidateNested()
+  @ApiProperty({
+    type: UsuarioDestinoDTO,
+    description: 'Información del usuario destino',
+    required: false,
+  })
+  usuario?: UsuarioDestinoDTO;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

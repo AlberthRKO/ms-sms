@@ -17,12 +17,6 @@ export class Origen {
 
   @Prop({ type: String, required: true })
   numero: string; // Número de origen desde donde se envía
-
-  @Prop({ type: Object, required: false })
-  usuario?: {
-    ci: string;
-    nombreCompleto: string;
-  };
 }
 
 // Subdocumento para información de destino
@@ -39,6 +33,12 @@ export class Destino {
 
   @Prop({ type: String, required: true, enum: MessageType, index: -1, default: MessageType.CODE })
   tipo: string; // Tipo: "Codigo" o "Informativo"
+
+  @Prop({ type: Object, required: false })
+  usuario?: {
+    ci: string;
+    nombreCompleto: string;
+  };
 }
 
 @Schema({ timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } })
