@@ -17,8 +17,8 @@ export class Origen {
   @Prop({ type: String, required: true })
   numero: string; // Número de origen desde donde se envía
 
-  @Prop({ type: Object, required: true })
-  usuario: {
+  @Prop({ type: Object, required: false })
+  usuario?: {
     ci: string;
     nombreCompleto: string;
   };

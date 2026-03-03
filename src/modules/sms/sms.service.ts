@@ -36,21 +36,8 @@ export class SmsService {
 
     // Crear el mensaje con estado inicial PENDIENTE
     const createdMessage = await this.messageModel.create({
-      origen: {
-        aplicacion: origen.aplicacion,
-        modulo: origen.modulo,
-        numero: origen.numero,
-        usuario: {
-          ci: origen.usuario.ci,
-          nombreCompleto: origen.usuario.nombreCompleto,
-        },
-      },
-      destino: {
-        numero: destino.numero,
-        mensaje: destino.mensaje,
-        fichero: destino.fichero || false,
-        tipo: destino.tipo,
-      },
+      origen,
+      destino,
       estado: MessageStatus.PENDING, // Siempre inicia como "Pendiente"
     });
 

@@ -15,9 +15,9 @@ export class SmsGateway {
    * La app externa escucha este evento para enviar el SMS
    */
   emitSendMessage(payload: Messages) {
-    // this.logger.log(
-    //   `Emitiendo evento 'send-message' - Tipo: ${payload.destino?.tipo || 'N/A'}, App: ${payload.origen?.aplicacion || 'N/A'}, Destino: ${payload.destino?.numero || 'N/A'}`,
-    // );
+    this.logger.log(
+      `Emitiendo evento 'send-message' - Tipo: ${payload.destino?.tipo || 'N/A'}, App: ${payload.origen?.aplicacion || 'N/A'}, Destino: ${payload.destino?.numero || 'N/A'}`,
+    );
     this.server.emit('send-message', payload);
   }
 
@@ -25,9 +25,9 @@ export class SmsGateway {
    * Emite el evento cuando se actualiza el estado de un mensaje
    */
   emitStatusUpdate(payload: Messages) {
-    // this.logger.log(
-    //   `Emitiendo evento 'send-message-status' - ID: ${payload._id || 'N/A'}, Estado: ${payload.estado || 'N/A'}`,
-    // );
+    this.logger.log(
+      `Emitiendo evento 'send-message-status' - ID: ${payload._id || 'N/A'}, Estado: ${payload.estado || 'N/A'}`,
+    );
     this.server.emit('send-message-status', payload);
   }
 }

@@ -6,7 +6,7 @@ export interface Messages {
     aplicacion: string;
     modulo: string;
     numero: string;
-    usuario: {
+    usuario?: {
       ci: string;
       nombreCompleto: string;
     };
