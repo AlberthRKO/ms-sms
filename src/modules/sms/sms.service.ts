@@ -32,7 +32,7 @@ export class SmsService {
   async sendMessageByPhone(inputDto: SendMessageTextDTO): Promise<ResponseDTO<any>> {
     const { origen, destino } = inputDto;
 
-    await this.validateMonthlyQuotaOrThrow();
+    const quotaValidation = await this.validateMonthlyQuotaOrThrow();
 
     // Crear el mensaje con estado inicial PENDIENTE
     const createdMessage = await this.messageModel.create({
@@ -74,9 +74,15 @@ export class SmsService {
     // SOLO emitir evento de nuevo mensaje, NO emitir evento de estado
     this.someGateway.emitSendMessage(payload);
 
-    this.logger.log(
-      `Mensaje creado - ID: ${payload._id}, Tipo: ${destino.tipo}, App: ${origen.aplicacion}, Destino: ${destino.numero}`,
-    );
+    // this.logger.log(
+    //   `Mensaje creado - ID: ${payload._id}, Tipo: ${destino.tipo}, App: ${origen.aplicacion}, Destino: ${destino.numero}`,
+    // );
+    if (quotaValidation.monthlyQuota !== null && quotaValidation.messagesThisMonth !== null) {
+      const currentMonthlyCount = quotaValidation.messagesThisMonth + 1;
+      this.logger.log(
+        `Cuota mensual SMS: ${currentMonthlyCount}/${quotaValidation.monthlyQuota} | ID: ${payload._id} | App: ${origen.aplicacion} | Destino: ${destino.numero}`,
+      );
+    }
 
     return dataResponseSuccess({ data: payload }, { message: 'Mensaje creado exitosamente' });
   }
@@ -167,11 +173,14 @@ export class SmsService {
     });
   }
 
-  private async validateMonthlyQuotaOrThrow(): Promise<void> {
+  private async validateMonthlyQuotaOrThrow(): Promise<{
+    monthlyQuota: number | null;
+    messagesThisMonth: number | null;
+  }> {
     const monthlyQuota = this.getMonthlyQuota();
 
     if (monthlyQuota === null) {
-      return;
+      return { monthlyQuota: null, messagesThisMonth: null };
     }
 
     const messagesThisMonth = await this.countMessagesThisMonth();
@@ -184,6 +193,8 @@ export class SmsService {
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
+
+    return { monthlyQuota, messagesThisMonth };
   }
 
   /**
