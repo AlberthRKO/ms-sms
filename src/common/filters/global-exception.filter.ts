@@ -30,7 +30,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   //
   catch(error: Error, host: ExecutionContextHost) {
     const response = host.switchToHttp().getResponse<FastifyReply>();
-    console.error('FilterError (****)', error);
 
     let resp: IResponseDTO<any> = {
       error: true,
@@ -74,7 +73,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       resp.status = respErr.status;
     } else if (error instanceof ValidatorException) {
       resp = error.getResponse() as IResponseDTO<any>;
-      printRequestBodyLog(host, resp.status, resp?.response);
     } else if (error.constructor.toString().includes('class HttpException extends Error')) {
       const respErr = (error as HttpException).getResponse() as IResponseDTO<any>;
       if (typeof respErr?.error !== 'boolean' && typeof respErr?.message !== 'string') {
