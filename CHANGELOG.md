@@ -1,5 +1,15 @@
 # CAMBIOS Y ACTUALIZACIONES
 
+## [0.1.1](https://git.mp.gob.bo/microservices/ms-sms-v2/compare/v0.1.0...v0.1.1) (2026-03-03)
+
+### 🚀 Features
+
+* agrega soporte para el campo 'entorno' en el envío y listado de mensajes, mejorando la flexibilidad del servicio SMS  jira/MS-19 ([4403882](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/44038821c3388d3d5d5e5c2a403d6c8637b16cac))
+
+### 🐞 Bug Fixes
+
+* corrige formato de mensaje de texto en función de entorno en el servicio SMS  jira/MS-19 ([f2df851](https://git.mp.gob.bo/microservices/ms-sms-v2/commit/f2df851887cac9cb93a8920a81eda9ea4a9a10e1))
+
 ## 0.1.0 (2026-03-03)
 
 ### 🚀 Features
