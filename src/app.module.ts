@@ -9,9 +9,11 @@ import { DtoValidatorPipe } from './common/pipes/dto-validator.pipe';
 import { ParamValidatorPipe } from './common/pipes/param-validator.pipe';
 import { GlobalModule } from './modules/global/global.module';
 import { AutoTasksModule } from './modules/auto/auto.module';
-import { MongooseModule } from '@nestjs/mongoose';
+import { MongooseModule, getConnectionToken } from '@nestjs/mongoose';
 import { MsLogsModule } from 'fiscalia_bo-nest-helpers/dist/modules/ms-logs';
 import { SmsModule } from './modules/sms/sms.module';
+import { HealthModule } from './modules/health';
+import { HEALTH_MONGODB_CONNECTION } from './modules/health/interfaces/health.interfaces';
 
 @Module({
   imports: [
@@ -22,6 +24,11 @@ import { SmsModule } from './modules/sms/sms.module';
       cache: true,
     }),
     MongooseModule.forRoot(process.env.ENV_MONGO_DB_URL),
+    HealthModule.forRoot({
+      checks: ['mongodb', 'env'],
+      requiredEnvVars: ['ENV_MONGO_DB_URL'],
+      timeoutMs: 3000,
+    }),
     ScheduleModule.forRoot(),
     GlobalModule,
     AutoTasksModule,
@@ -38,6 +45,11 @@ import { SmsModule } from './modules/sms/sms.module';
     AppService,
     { provide: APP_PIPE, useClass: DtoValidatorPipe },
     { provide: APP_PIPE, useClass: ParamValidatorPipe },
+    {
+      provide: HEALTH_MONGODB_CONNECTION,
+      useFactory: (connection: unknown) => connection,
+      inject: [getConnectionToken()],
+    },
   ],
 })
 export class AppModule {}
